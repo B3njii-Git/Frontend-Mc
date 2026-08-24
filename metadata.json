@@ -1,0 +1,6 @@
+{
+  "name": "McDonald's Next-Gen",
+  "description": "Experiencia premium rediseñada de McDonald's con pedidos rápidos geolocalizados, personalización avanzada de menú, recompensas MiMcDonald's, pagos seguros, analíticas y panel de administración.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
