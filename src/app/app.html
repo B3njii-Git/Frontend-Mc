@@ -1,0 +1,91 @@
+<div class="min-h-screen flex flex-col bg-stone-50 font-sans text-stone-900">
+  
+  <header class="bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center text-yellow-400 font-black text-2xl shadow-sm">
+        M
+      </div>
+      <h1 class="text-xl font-black tracking-tight">Pedidos360</h1>
+    </div>
+    
+    <div *ngIf="loginDisplay" class="flex items-center gap-4">
+      <span class="text-sm font-medium text-stone-600">{{ userEmail }}</span>
+      <button (click)="logout()" class="text-sm px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-lg transition-colors">
+        Salir
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col">
+    
+    <!-- PANTALLA DE LOGIN -->
+    <div *ngIf="!loginDisplay" class="flex-1 flex flex-col items-center justify-center p-4">
+      <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-sm border border-stone-200 text-center">
+        <div class="w-20 h-20 bg-red-600 rounded-2xl flex items-center justify-center text-yellow-400 font-black text-5xl mx-auto mb-6 shadow-md">
+          M
+        </div>
+        
+        <h2 class="text-2xl font-black mb-2">Pedidos360</h2>
+        <p class="text-stone-500 mb-8 text-sm">
+          Portal Corporativo Seguro.<br/>
+          Inicia sesi&oacute;n para acceder al cat&aacute;logo.
+        </p>
+
+        <div class="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-left text-sm flex items-start gap-3">
+          <p>La autenticaci&oacute;n est&aacute; delegada a <strong>Microsoft Entra ID</strong>. Tus peticiones usar&aacute;n Tokens JWT.</p>
+        </div>
+
+        <button 
+          (click)="login()"
+          class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#0078D4] hover:bg-[#006cbd] text-white rounded-xl font-bold shadow-md transition-all cursor-pointer"
+        >
+          Iniciar sesi&oacute;n con Microsoft
+        </button>
+      </div>
+    </div>
+
+    <!-- PANTALLA DEL CATÁLOGO / SISTEMA -->
+    <div *ngIf="loginDisplay" class="max-w-5xl mx-auto w-full p-6">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 mb-6">
+        <h2 class="text-2xl font-black mb-4 text-stone-800">Men&uacute; de Productos</h2>
+        <p class="text-stone-500 mb-6">Aqu&iacute; ver&aacute;s los productos servidos desde el API Gateway.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Tarjeta de ejemplo -->
+          <div class="bg-stone-50 rounded-xl p-4 border border-stone-100 flex flex-col">
+            <div class="h-32 bg-stone-200 rounded-lg mb-4 flex items-center justify-center">
+              <span class="text-stone-400 font-bold">🍔 Imagen</span>
+            </div>
+            <h3 class="font-black text-lg mb-1">Big Mac</h3>
+            <p class="text-stone-500 text-sm mb-4 flex-1">Doble hamburguesa de carne 100% vacuno...</p>
+            <div class="flex justify-between items-center mt-auto">
+              <span class="font-black text-green-600 text-lg">$4.500</span>
+              <button class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm text-sm transition-colors">
+                Agregar
+              </button>
+            </div>
+          </div>
+          
+           <!-- Tarjeta de ejemplo 2 -->
+          <div class="bg-stone-50 rounded-xl p-4 border border-stone-100 flex flex-col">
+            <div class="h-32 bg-stone-200 rounded-lg mb-4 flex items-center justify-center">
+              <span class="text-stone-400 font-bold">🍟 Imagen</span>
+            </div>
+            <h3 class="font-black text-lg mb-1">Papas Medianas</h3>
+            <p class="text-stone-500 text-sm mb-4 flex-1">Crujientes papas fritas doradas.</p>
+            <div class="flex justify-between items-center mt-auto">
+              <span class="font-black text-green-600 text-lg">$1.500</span>
+              <button class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm text-sm transition-colors">
+                Agregar
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<router-outlet></router-outlet>
