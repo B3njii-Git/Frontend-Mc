@@ -1,4 +1,4 @@
-﻿import { Configuration, LogLevel } from '@azure/msal-browser';
+import { Configuration, LogLevel } from '@azure/msal-browser';
 import { environment } from '../environments/environment';
 
 export const msalConfig: Configuration = {
