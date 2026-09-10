@@ -13,8 +13,8 @@ export function MSALInstanceFactory(): IPublicClientApplication {
 
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
-  // Protegemos todas las peticiones que vayan al API Gateway
-  protectedResourceMap.set(environment.apiGatewayUrl + protectedResources.apiGateway.endpoint, protectedResources.apiGateway.scopes); 
+  // Añadimos /* al final para que el interceptor coincida con cualquier sub-ruta (strict matching)
+  protectedResourceMap.set(environment.apiGatewayUrl + protectedResources.apiGateway.endpoint + '/*', protectedResources.apiGateway.scopes); 
 
   return {
     interactionType: InteractionType.Redirect,
