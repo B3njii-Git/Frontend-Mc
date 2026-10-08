@@ -12,7 +12,12 @@
       <button (click)="isCartOpen = true" class="bg-yellow-100 hover:bg-yellow-200 transition-colors text-yellow-800 px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer border-0">
         🛒 {{ carrito?.items?.length || 0 }} items
       </button>
-      <button (click)="isProfileOpen = true" class="text-sm font-medium text-stone-600 hover:text-stone-900 cursor-pointer border-0 bg-transparent flex items-center gap-1">
+      <!-- BOTON NOTIFICACIONES -->
+      <button (click)="abrirPerfil()" class="relative p-2 rounded-full hover:bg-stone-100 transition-colors cursor-pointer border-0 bg-transparent text-stone-600">
+        <span class="text-xl">🔔</span>
+        <span *ngIf="contadorNoLeidas > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{{ contadorNoLeidas }}</span>
+      </button>
+      <button (click)="abrirPerfil()" class="text-sm font-medium text-stone-600 hover:text-stone-900 cursor-pointer border-0 bg-transparent flex items-center gap-1">
         👤 {{ userEmail }}
       </button>
       <button (click)="logout()" class="text-sm px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-lg transition-colors cursor-pointer">
@@ -116,12 +121,54 @@
       </div>
       
       <div *ngIf="carrito?.items?.length" class="p-6 border-t border-stone-100 bg-stone-50">
-        <button class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-md transition-colors cursor-pointer">
+        <button (click)="crearPedido()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-md transition-colors cursor-pointer">
           Proceder al pago
         </button>
       </div>
     </div>
   </div>
+  <!-- MODAL DE PAGO -->
+  <div *ngIf="mostrarModalPago" class="fixed inset-0 z-50 flex items-center justify-center">
+    <!-- Overlay -->
+    <div class="fixed inset-0 bg-black/60" (click)="cancelarPago()"></div>
+    
+    <!-- Modal -->
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8 z-10">
+      <h2 class="text-2xl font-black text-stone-800 mb-2">💳 Confirmar Pago</h2>
+      <p class="text-stone-500 text-sm mb-6">Pedido #{{ pedidoPendientePago?.id }}</p>
+      
+      <!-- Monto -->
+      <div class="bg-green-50 rounded-xl p-4 mb-6 border border-green-200">
+        <p class="text-xs font-bold text-green-600 uppercase tracking-wider">Total a pagar</p>
+        <p class="text-3xl font-black text-green-700">${{ pedidoPendientePago?.total | number }}</p>
+      </div>
+
+      <!-- Metodo de pago -->
+      <div class="mb-6">
+        <label class="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-3">Metodo de Pago</label>
+        <div class="grid grid-cols-2 gap-3">
+          <button *ngFor="let metodo of ['TARJETA_CREDITO', 'TARJETA_DEBITO', 'WEBPAY', 'EFECTIVO']" 
+                  (click)="metodoPagoSeleccionado = metodo"
+                  class="p-3 rounded-xl border-2 text-sm font-bold transition-all cursor-pointer"
+                  [ngClass]="metodoPagoSeleccionado === metodo ? 'border-green-500 bg-green-50 text-green-700' : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'">
+            {{ metodo === 'TARJETA_CREDITO' ? '💳 T. Credito' : metodo === 'TARJETA_DEBITO' ? '💳 T. Debito' : metodo === 'WEBPAY' ? '🌐 WebPay' : '💵 Efectivo' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="flex gap-3">
+        <button (click)="cancelarPago()" class="flex-1 py-3 rounded-xl border-2 border-stone-200 text-stone-600 font-bold hover:bg-stone-50 transition-colors cursor-pointer">
+          Cancelar
+        </button>
+        <button (click)="confirmarPago()" [disabled]="procesandoPago"
+                class="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold transition-colors cursor-pointer disabled:opacity-50">
+          {{ procesandoPago ? 'Procesando...' : 'Pagar Ahora' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- PERFIL SIDEBAR -->
   <div *ngIf="isProfileOpen" class="fixed inset-0 z-50 flex justify-end">
     <!-- Overlay -->
@@ -169,6 +216,57 @@
           <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100">
             <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Object ID (Usuario)</h3>
             <p class="text-stone-500 text-xs font-mono break-all">{{ userProfile.oid }}</p>
+          </div>
+
+          <!-- NOTIFICACIONES -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 mt-2 mb-6">
+            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Notificaciones</h3>
+            
+            <div *ngIf="notificaciones.length === 0" class="text-sm text-stone-500 italic">
+              Sin notificaciones.
+            </div>
+
+            <div *ngFor="let notif of notificaciones" class="mb-3 last:mb-0">
+              <div class="flex items-start gap-2 p-2 rounded-lg" [ngClass]="{'bg-blue-50': !notif.leida, 'bg-stone-50': notif.leida}">
+                <span class="text-lg">{{ notif.tipo === 'PAGO_APROBADO' ? '✅' : notif.tipo === 'PAGO_RECHAZADO' ? '❌' : '📦' }}</span>
+                <div class="flex-1">
+                  <p class="text-xs text-stone-700 font-medium">{{ notif.mensaje }}</p>
+                  <p class="text-xs text-stone-400 mt-1">{{ notif.fechaCreacion | date:'short' }}</p>
+                </div>
+                <button *ngIf="!notif.leida" (click)="marcarNotificacionLeida(notif.id)" class="text-xs text-blue-500 hover:text-blue-700 font-bold cursor-pointer">✓</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- HISTORIAL DE COMPRAS -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 mt-6">
+            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Mis Compras</h3>
+            
+            <div *ngIf="pedidos.length === 0" class="text-sm text-stone-500 italic">
+              Aún no tienes pedidos.
+            </div>
+
+            <div *ngFor="let pedido of pedidos" class="mb-4 border-b border-stone-100 pb-3 last:border-0 last:pb-0 last:mb-0">
+              <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-stone-800 text-sm">Pedido #{{ pedido.id }}</span>
+                <span class="text-xs font-bold px-2 py-1 rounded-full" 
+                      [ngClass]="{'bg-yellow-100 text-yellow-800': pedido.estado === 'PENDIENTE', 'bg-green-100 text-green-800': pedido.estado === 'ENTREGADO' || pedido.estado === 'LISTO_PARA_ENTREGA'}">
+                  {{ pedido.estado }}
+                </span>
+              </div>
+              <div class="text-xs text-stone-500 mb-2">{{ pedido.fechaCreacion | date:'medium' }}</div>
+              <div class="font-bold text-blue-600 mb-2">${{ pedido.total | number }}</div>
+              
+              <!-- ACCIONES DE PEDIDO (Solo si está pendiente) -->
+              <div *ngIf="pedido.estado === 'PENDIENTE'" class="flex gap-2">
+                <button (click)="cambiarEstadoPedido(pedido.id, 'ENTREGADO')" class="flex-1 bg-green-100 hover:bg-green-200 text-green-700 text-xs font-bold py-2 px-3 rounded shadow-sm border border-green-200 transition-colors">
+                  ✅ Recibido
+                </button>
+                <button (click)="cambiarEstadoPedido(pedido.id, 'CANCELADO')" class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold py-2 px-3 rounded shadow-sm border border-red-200 transition-colors">
+                  ❌ Cancelar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

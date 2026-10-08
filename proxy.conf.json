@@ -1,14 +1,26 @@
 {
   "/api/v1/auth": {
-    "target": "http://localhost:8080",
+    "target": "http://ms-login:8080",
     "secure": false
   },
   "/api/productos": {
-    "target": "http://localhost:8081",
+    "target": "http://ms-productos:8081",
     "secure": false
   },
   "/api/carrito": {
-    "target": "http://localhost:8082",
+    "target": "http://ms-carrito:8082",
+    "secure": false
+  },
+  "/api/pedidos": {
+    "target": "http://ms-pedidos:8083",
+    "secure": false
+  },
+  "/api/pagos": {
+    "target": "http://ms-pagos:8084",
+    "secure": false
+  },
+  "/api/notificaciones": {
+    "target": "http://ms-notificaciones:8085",
     "secure": false
   }
 }

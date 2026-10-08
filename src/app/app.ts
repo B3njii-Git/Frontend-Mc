@@ -7,6 +7,7 @@ import { filter, takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../environments/environment';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-root',
@@ -26,6 +27,10 @@ export class App implements OnInit, OnDestroy {
   carrito: any = null;
   isCartOpen: boolean = false;
   isProfileOpen: boolean = false;
+  abrirPerfil() {
+    this.isProfileOpen = true;
+    this.notificaciones.filter(n => !n.leida).forEach(n => this.marcarNotificacionLeida(n.id));
+  }
 
   getNombreProducto(productoId: string): string {
     const prod = this.productos.find(p => p.id === productoId);
@@ -92,13 +97,29 @@ export class App implements OnInit, OnDestroy {
         },
         error: err => console.error('Error cargando carrito', err)
     });
+    this.cargarPedidos();
+    this.cargarNotificaciones();
   }
 
   agregarAlCarrito(producto: any) {
     const dto = { productoId: producto.id, cantidad: 1 };
-    this.http.post<any>(`${environment.apiGatewayUrl}/api/carrito/items`, dto).subscribe(data => {
-        this.carrito = data;
-        this.cdr.detectChanges();
+    this.http.post<any>(`${environment.apiGatewayUrl}/api/carrito/items`, dto).subscribe({
+        next: data => {
+            this.carrito = data;
+            this.cdr.detectChanges();
+            
+            // SweetAlert2 Toast notification
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true,
+              icon: 'success',
+              title: `¡${producto.nombre} añadido al carrito!`
+            });
+        },
+        error: err => console.error('Error agregando al carrito', err)
     });
   }
 
@@ -108,6 +129,132 @@ export class App implements OnInit, OnDestroy {
         this.cdr.detectChanges();
     });
   }
+
+  // --- NUEVAS FUNCIONES PARA PEDIDOS ---
+  pedidos: any[] = [];
+
+  // Estado de pagos y notificaciones
+  notificaciones: any[] = [];
+  contadorNoLeidas: number = 0;
+  mostrarModalPago: boolean = false;
+  pedidoPendientePago: any = null;
+  metodoPagoSeleccionado: string = 'TARJETA_CREDITO';
+  procesandoPago: boolean = false;
+  
+  cargarPedidos() {
+    this.http.get<any[]>(`${environment.apiGatewayUrl}/api/pedidos`).subscribe({
+        next: data => {
+            this.pedidos = data;
+            this.cdr.detectChanges();
+        },
+        error: err => console.error('Error cargando pedidos', err)
+    });
+  }
+
+  crearPedido() {
+    if (!this.carrito || !this.carrito.items || this.carrito.items.length === 0) {
+      alert('El carrito esta vacio');
+      return;
+    }
+
+    this.http.post<any>(`${environment.apiGatewayUrl}/api/pedidos`, {}).subscribe({
+        next: data => {
+            this.pedidoPendientePago = data;
+            this.carrito = { items: [] };
+            this.cargarPedidos();
+            this.mostrarModalPago = true;
+            this.cdr.detectChanges();
+        },
+        error: err => {
+            console.error('Error creando pedido', err);
+            alert('Hubo un error al crear tu pedido.');
+        }
+    });
+  }
+
+  confirmarPago() {
+    if (!this.pedidoPendientePago) return;
+    this.procesandoPago = true;
+
+    const dto = {
+      pedidoId: this.pedidoPendientePago.id,
+      monto: this.pedidoPendientePago.total,
+      metodoPago: this.metodoPagoSeleccionado
+    };
+
+    this.http.post<any>(`${environment.apiGatewayUrl}/api/pagos`, dto).subscribe({
+        next: data => {
+            this.procesandoPago = false;
+            this.mostrarModalPago = false;
+            if (data.estado === 'APROBADO') {
+                alert('Pago aprobado! Tu pedido #' + data.pedidoId + ' esta en preparacion. Codigo: ' + data.codigoTransaccion);
+            } else {
+                alert('Pago rechazado. Por favor intenta con otro metodo.');
+            }
+            this.cargarPedidos();
+            this.cargarNotificaciones();
+            this.cdr.detectChanges();
+        },
+        error: err => {
+            this.procesandoPago = false;
+            console.error('Error procesando pago', err);
+            alert('Error al procesar el pago.');
+        }
+    });
+  }
+
+  cancelarPago() {
+    this.mostrarModalPago = false;
+    this.pedidoPendientePago = null;
+    this.cdr.detectChanges();
+  }
+
+  cargarNotificaciones() {
+    this.http.get<any[]>(`${environment.apiGatewayUrl}/api/notificaciones`).subscribe({
+        next: data => {
+            this.notificaciones = data;
+            this.contadorNoLeidas = data.filter((n: any) => !n.leida).length;
+            this.cdr.detectChanges();
+        },
+        error: err => console.error('Error cargando notificaciones', err)
+    });
+  }
+
+  marcarNotificacionLeida(id: number) {
+    // Optimistic UI update
+    const notif = this.notificaciones.find(n => n.id === id);
+    if (notif) {
+        notif.leida = true;
+        this.contadorNoLeidas = this.notificaciones.filter((n: any) => !n.leida).length;
+        this.cdr.detectChanges();
+    }
+
+    this.http.patch<any>(`${environment.apiGatewayUrl}/api/notificaciones/${id}/leer`, {}).subscribe({
+        next: () => this.cargarNotificaciones(),
+        error: err => {
+            console.error('Error marcando notificacion', err);
+            // Revert if error
+            if (notif) notif.leida = false;
+            this.contadorNoLeidas = this.notificaciones.filter((n: any) => !n.leida).length;
+            this.cdr.detectChanges();
+        }
+    });
+  }
+
+  cambiarEstadoPedido(pedidoId: number, nuevoEstado: string) {
+    this.http.patch<any>(`${environment.apiGatewayUrl}/api/pedidos/${pedidoId}/estado?estado=${nuevoEstado}`, {}).subscribe({
+        next: data => {
+            alert("El pedido " + pedidoId + " ahora está " + nuevoEstado);
+            this.cargarPedidos();
+            this.cdr.detectChanges();
+        },
+        error: err => {
+            console.error('Error actualizando pedido', err);
+            alert("Hubo un error al actualizar el estado.");
+        }
+    });
+  }
+  // -------------------------------------
 
   setLoginDisplay() {
     console.log('Cambiando estado de loginDisplay a:', this.authService.instance.getAllAccounts().length > 0);

@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  apiGatewayUrl: 'http://localhost:8080',
+  apiGatewayUrl: '',
   redirectUri: 'http://localhost:4200'
 };
