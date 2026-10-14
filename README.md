@@ -58,7 +58,7 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
 
-## Versión Actual: 2.2.0
-- Integración del flujo de pagos (modal interactivo).
-- Integración de sistema de notificaciones en tiempo real.
-- Alertas Toast (SweetAlert2) para la cesta de compras.
+## Versión Actual: 2.3.0
+- Integración y comunicación completa con AWS API Gateway Backend (Carrito, Pedidos, Pagos, Notificaciones).
+- Configuración de MSAL Interceptor con strictMatching desactivado para adjuntar token Bearer a todas las subrutas de microservicios.
+- Resiliencia en peticiones HTTP con SweetAlert2 y sincronización de estado del carrito y pedidos.

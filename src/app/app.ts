@@ -27,6 +27,10 @@ export class App implements OnInit, OnDestroy {
   carrito: any = null;
   isCartOpen: boolean = false;
   isProfileOpen: boolean = false;
+  get apiUrl(): string {
+    return (environment.apiGatewayUrl || '').replace(/\/+$/, '');
+  }
+
   abrirPerfil() {
     this.isProfileOpen = true;
     this.notificaciones.filter(n => !n.leida).forEach(n => this.marcarNotificacionLeida(n.id));
@@ -73,29 +77,40 @@ export class App implements OnInit, OnDestroy {
   }
 
   sincronizarUsuario() {
-     this.http.post(`${environment.apiGatewayUrl}/api/v1/auth/login`, {}).subscribe({
+     this.http.post(`${this.apiUrl}/api/v1/auth/login`, {}).subscribe({
          next: (res) => {
              console.log('Usuario sincronizado con backend', res);
              this.cargarDatos();
          },
-         error: (err) => console.error('Error sincronizando usuario', err)
+         error: (err) => {
+             console.warn('Backend auth/login no disponible o no requerido, continuando...', err);
+             this.cargarDatos();
+         }
      });
   }
 
   cargarDatos() {
-    this.http.get<any[]>(`${environment.apiGatewayUrl}/api/productos`).subscribe({
+    this.http.get<any[]>(`${this.apiUrl}/api/productos`).subscribe({
         next: data => {
-            this.productos = data;
+            this.productos = data || [];
             this.cdr.detectChanges();
         },
-        error: err => console.error('Error cargando productos', err)
+        error: err => {
+            console.error('Error cargando productos', err);
+            this.productos = [];
+            this.cdr.detectChanges();
+        }
     });
-    this.http.get<any>(`${environment.apiGatewayUrl}/api/carrito`).subscribe({
+    this.http.get<any>(`${this.apiUrl}/api/carrito`).subscribe({
         next: data => {
-            this.carrito = data;
+            this.carrito = data || { items: [] };
             this.cdr.detectChanges();
         },
-        error: err => console.error('Error cargando carrito', err)
+        error: err => {
+            console.error('Error cargando carrito', err);
+            this.carrito = { items: [] };
+            this.cdr.detectChanges();
+        }
     });
     this.cargarPedidos();
     this.cargarNotificaciones();
@@ -103,7 +118,7 @@ export class App implements OnInit, OnDestroy {
 
   agregarAlCarrito(producto: any) {
     const dto = { productoId: producto.id, cantidad: 1 };
-    this.http.post<any>(`${environment.apiGatewayUrl}/api/carrito/items`, dto).subscribe({
+    this.http.post<any>(`${this.apiUrl}/api/carrito/items`, dto).subscribe({
         next: data => {
             this.carrito = data;
             this.cdr.detectChanges();
@@ -119,14 +134,29 @@ export class App implements OnInit, OnDestroy {
               title: `¡${producto.nombre} añadido al carrito!`
             });
         },
-        error: err => console.error('Error agregando al carrito', err)
+        error: err => {
+            console.error('Error agregando al carrito', err);
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              showConfirmButton: false,
+              timer: 3500,
+              icon: 'error',
+              title: 'Error al agregar al carrito'
+            });
+        }
     });
   }
 
   eliminarDelCarrito(productoId: string) {
-    this.http.delete<any>(`${environment.apiGatewayUrl}/api/carrito/items/${productoId}`).subscribe(data => {
-        this.carrito = data;
-        this.cdr.detectChanges();
+    this.http.delete<any>(`${this.apiUrl}/api/carrito/items/${productoId}`).subscribe({
+        next: data => {
+            this.carrito = data;
+            this.cdr.detectChanges();
+        },
+        error: err => {
+            console.error('Error eliminando del carrito', err);
+        }
     });
   }
 
@@ -142,9 +172,9 @@ export class App implements OnInit, OnDestroy {
   procesandoPago: boolean = false;
   
   cargarPedidos() {
-    this.http.get<any[]>(`${environment.apiGatewayUrl}/api/pedidos`).subscribe({
+    this.http.get<any[]>(`${this.apiUrl}/api/pedidos`).subscribe({
         next: data => {
-            this.pedidos = data;
+            this.pedidos = data || [];
             this.cdr.detectChanges();
         },
         error: err => console.error('Error cargando pedidos', err)
@@ -157,10 +187,11 @@ export class App implements OnInit, OnDestroy {
       return;
     }
 
-    this.http.post<any>(`${environment.apiGatewayUrl}/api/pedidos`, {}).subscribe({
+    this.http.post<any>(`${this.apiUrl}/api/pedidos`, {}).subscribe({
         next: data => {
             this.pedidoPendientePago = data;
             this.carrito = { items: [] };
+            this.isCartOpen = false;
             this.cargarPedidos();
             this.mostrarModalPago = true;
             this.cdr.detectChanges();
@@ -182,14 +213,22 @@ export class App implements OnInit, OnDestroy {
       metodoPago: this.metodoPagoSeleccionado
     };
 
-    this.http.post<any>(`${environment.apiGatewayUrl}/api/pagos`, dto).subscribe({
+    this.http.post<any>(`${this.apiUrl}/api/pagos`, dto).subscribe({
         next: data => {
             this.procesandoPago = false;
             this.mostrarModalPago = false;
             if (data.estado === 'APROBADO') {
-                alert('Pago aprobado! Tu pedido #' + data.pedidoId + ' esta en preparacion. Codigo: ' + data.codigoTransaccion);
+                Swal.fire({
+                  icon: 'success',
+                  title: '¡Pago aprobado!',
+                  text: 'Tu pedido #' + data.pedidoId + ' está en preparación. Código: ' + (data.codigoTransaccion || '')
+                });
             } else {
-                alert('Pago rechazado. Por favor intenta con otro metodo.');
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Pago rechazado',
+                  text: 'Por favor intenta con otro método de pago.'
+                });
             }
             this.cargarPedidos();
             this.cargarNotificaciones();
@@ -198,7 +237,11 @@ export class App implements OnInit, OnDestroy {
         error: err => {
             this.procesandoPago = false;
             console.error('Error procesando pago', err);
-            alert('Error al procesar el pago.');
+            Swal.fire({
+              icon: 'error',
+              title: 'Error al procesar el pago',
+              text: 'Hubo un problema al procesar el pago.'
+            });
         }
     });
   }
@@ -210,10 +253,10 @@ export class App implements OnInit, OnDestroy {
   }
 
   cargarNotificaciones() {
-    this.http.get<any[]>(`${environment.apiGatewayUrl}/api/notificaciones`).subscribe({
+    this.http.get<any[]>(`${this.apiUrl}/api/notificaciones`).subscribe({
         next: data => {
-            this.notificaciones = data;
-            this.contadorNoLeidas = data.filter((n: any) => !n.leida).length;
+            this.notificaciones = data || [];
+            this.contadorNoLeidas = (data || []).filter((n: any) => !n.leida).length;
             this.cdr.detectChanges();
         },
         error: err => console.error('Error cargando notificaciones', err)
@@ -229,7 +272,7 @@ export class App implements OnInit, OnDestroy {
         this.cdr.detectChanges();
     }
 
-    this.http.patch<any>(`${environment.apiGatewayUrl}/api/notificaciones/${id}/leer`, {}).subscribe({
+    this.http.patch<any>(`${this.apiUrl}/api/notificaciones/${id}/leer`, {}).subscribe({
         next: () => this.cargarNotificaciones(),
         error: err => {
             console.error('Error marcando notificacion', err);
@@ -242,9 +285,15 @@ export class App implements OnInit, OnDestroy {
   }
 
   cambiarEstadoPedido(pedidoId: number, nuevoEstado: string) {
-    this.http.patch<any>(`${environment.apiGatewayUrl}/api/pedidos/${pedidoId}/estado?estado=${nuevoEstado}`, {}).subscribe({
+    this.http.patch<any>(`${this.apiUrl}/api/pedidos/${pedidoId}/estado?estado=${nuevoEstado}`, {}).subscribe({
         next: data => {
-            alert("El pedido " + pedidoId + " ahora está " + nuevoEstado);
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              timer: 3000,
+              icon: 'info',
+              title: 'Pedido ' + pedidoId + ' actualizado a ' + nuevoEstado
+            });
             this.cargarPedidos();
             this.cdr.detectChanges();
         },

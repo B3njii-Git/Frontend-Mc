@@ -13,12 +13,42 @@ export function MSALInstanceFactory(): IPublicClientApplication {
 
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
-  // Añadimos /* al final para que el interceptor coincida con cualquier sub-ruta (strict matching)
-  protectedResourceMap.set(environment.apiGatewayUrl + protectedResources.apiGateway.endpoint + '/*', protectedResources.apiGateway.scopes); 
+  const baseUrl = (environment.apiGatewayUrl || '').replace(/\/+$/, '');
+  const scopes = protectedResources.apiGateway.scopes;
+
+  const rutas = [
+    '/api/v1/auth',
+    '/api/productos',
+    '/api/carrito',
+    '/api/pedidos',
+    '/api/pagos',
+    '/api/notificaciones'
+  ];
+
+  rutas.forEach(r => {
+    if (baseUrl) {
+      protectedResourceMap.set(`${baseUrl}${r}`, scopes);
+      protectedResourceMap.set(`${baseUrl}${r}/`, scopes);
+      protectedResourceMap.set(`${baseUrl}${r}/*`, scopes);
+    }
+    protectedResourceMap.set(r, scopes);
+    protectedResourceMap.set(`${r}/`, scopes);
+    protectedResourceMap.set(`${r}/*`, scopes);
+  });
+
+  if (baseUrl) {
+    protectedResourceMap.set(`${baseUrl}/api`, scopes);
+    protectedResourceMap.set(`${baseUrl}/api/`, scopes);
+    protectedResourceMap.set(`${baseUrl}/api/*`, scopes);
+  }
+  protectedResourceMap.set('/api', scopes);
+  protectedResourceMap.set('/api/', scopes);
+  protectedResourceMap.set('/api/*', scopes);
 
   return {
     interactionType: InteractionType.Redirect,
-    protectedResourceMap
+    protectedResourceMap,
+    strictMatching: false
   };
 }
 
