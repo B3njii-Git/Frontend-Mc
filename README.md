@@ -58,7 +58,19 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
 
-## Versión Actual: 2.3.0
+## Versión Actual: 2.5.0
+- **Integración con Transbank Webpay Plus y Kafka Velocity Check (`app.ts` & `app.html`)**:
+  - Redirección POST automática (`token_ws`) hacia el portal de integración de Transbank Webpay Plus mediante `POST /api/pagos/iniciar`.
+  - Captura automática de callback (`?token_ws=...` o `?TBK_TOKEN=...`) en `ngOnInit()` y confirmación con `POST /api/pagos/commit`, actualizando el estado del pedido, notificaciones y el Top 5 de recomendaciones (`purchase = 3 pts`).
+  - Simulador de ráfaga **Kafka Velocity Check** (3+ intentos en `<10s` hacia `payment-attempts` $\rightarrow$ bloqueo temporal de 30 minutos `HTTP 429 Too Many Requests`) e indicador/desbloqueo de estado en el modal de pago y perfil.
+- **Sistema Propio de Notificaciones Toast y Modales de Estado**:
+  - Stack de notificaciones flotantes en `bottom-6 right-6` con acción rápida (*"Ver pedido"*) y modales de confirmación libres de librerías intrusivas.
+- **Rediseño UI Corporativo sin emojis**: Interfaz renovada con iconografía vectorial SVG, contenedor alineado `max-w-[1440px]`, grilla de 4 columnas, favicon de arcos dorados y tipografías *Plus Jakarta Sans* y *JetBrains Mono*.
+- **Panel de Inteligencia y Ranking Top 5 en Tiempo Real (`ms-recomendaciones` + Kafka)**:
+  - Visualización del **Top 5 (`TOP #1` a `TOP #5`)** con puntaje acumulado en vivo (`pts`) según ponderación de interacciones (`Vista: +1 pt`, `Carrito: +2 pts`, `Compra: +3 pts`).
+- **Sincronización Segura MSAL (`asegurarTokenYCargar`)**: Renovación silenciosa del token JWT (`acquireTokenSilent`) antes de disparar consultas paralelas a Pedidos, Notificaciones y Alertas de Fraude.
+
+### Versión 2.3.0
 - Integración y comunicación completa con AWS API Gateway Backend (Carrito, Pedidos, Pagos, Notificaciones).
 - Configuración de MSAL Interceptor con strictMatching desactivado para adjuntar token Bearer a todas las subrutas de microservicios.
 - Resiliencia en peticiones HTTP con SweetAlert2 y sincronización de estado del carrito y pedidos.

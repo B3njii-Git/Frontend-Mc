@@ -1,85 +1,328 @@
-<div class="min-h-screen flex flex-col bg-stone-50 font-sans text-stone-900">
+<div class="min-h-screen flex flex-col bg-[#F8FAFC] font-sans text-zinc-900">
   
-  <header class="bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between shadow-sm">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center text-yellow-400 font-black text-2xl shadow-sm">
-        M
+  <!-- NAVBAR SUPERIOR (Full-width con contenedor compartido max-w-[1440px] y márgenes estándar px-6 lg:px-12) -->
+  <header class="sticky top-0 z-30 h-16 bg-white/95 backdrop-blur-md border-b border-zinc-200/80">
+    <div class="w-full max-w-[1440px] mx-auto h-full px-6 lg:px-12 flex items-center justify-between gap-4">
+      
+      <!-- Brand + Quick Category Links -->
+      <div class="flex items-center gap-8">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 bg-[#DA291C] rounded-xl flex items-center justify-center shadow-xs">
+            <svg class="w-5 h-5" viewBox="0 0 64 64" fill="none">
+              <path d="M14 50c0-20 5-34 11-34 4.8 0 7 13 7 29 0-16 2.2-29 7-29 6 0 11 14 11 34" stroke="#FFC72C" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-base font-extrabold tracking-tight text-zinc-950 leading-none">Pedidos360</span>
+            <span class="text-[11px] font-medium text-zinc-500 mt-0.5 hidden sm:inline">Restaurante &amp; Delivery</span>
+          </div>
+        </div>
+
+        <!-- Navegación rápida de categorías en el Header (estilo tienda real) -->
+        <nav *ngIf="loginDisplay" class="hidden xl:flex items-center gap-1">
+          <button *ngFor="let cat of ['Todos', 'Hamburguesas', 'Acompañamientos', 'Bebidas', 'Postres']"
+                  (click)="filtrarCatalogo(cat)"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer border-0"
+                  [ngClass]="categoriaActiva === cat ? 'bg-zinc-900 text-white' : 'bg-transparent text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'">
+            {{ cat }}
+          </button>
+        </nav>
       </div>
-      <h1 class="text-xl font-black tracking-tight">Pedidos360</h1>
-    </div>
-    
-    <div *ngIf="loginDisplay" class="flex items-center gap-4">
-      <button (click)="isCartOpen = true" class="bg-yellow-100 hover:bg-yellow-200 transition-colors text-yellow-800 px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer border-0">
-        🛒 {{ carrito?.items?.length || 0 }} items
-      </button>
-      <!-- BOTON NOTIFICACIONES -->
-      <button (click)="abrirPerfil()" class="relative p-2 rounded-full hover:bg-stone-100 transition-colors cursor-pointer border-0 bg-transparent text-stone-600">
-        <span class="text-xl">🔔</span>
-        <span *ngIf="contadorNoLeidas > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{{ contadorNoLeidas }}</span>
-      </button>
-      <button (click)="abrirPerfil()" class="text-sm font-medium text-stone-600 hover:text-stone-900 cursor-pointer border-0 bg-transparent flex items-center gap-1">
-        👤 {{ userEmail }}
-      </button>
-      <button (click)="logout()" class="text-sm px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-lg transition-colors cursor-pointer">
-        Salir
-      </button>
+      
+      <!-- Buscador central en barra + Acciones de usuario -->
+      <div *ngIf="loginDisplay" class="flex items-center gap-3 flex-1 justify-end max-w-xl">
+        <!-- Buscador integrado en la barra -->
+        <div class="relative hidden md:block flex-1 max-w-xs">
+          <svg class="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text"
+                 [(ngModel)]="busquedaTexto"
+                 (keyup.enter)="filtrarCatalogo()"
+                 placeholder="Buscar en el menú..."
+                 class="w-full pl-9 pr-3 py-2 rounded-xl bg-zinc-100/90 border border-transparent text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:bg-white focus:border-zinc-300 transition-all" />
+        </div>
+
+        <!-- BOTON NOTIFICACIONES -->
+        <button (click)="abrirPerfil()" class="relative w-10 h-10 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer border-0 text-zinc-700" title="Notificaciones y Pedidos">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          <span *ngIf="contadorNoLeidas > 0 && !notificacionesEnColaError" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold tabular-nums rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+            {{ contadorNoLeidas }}
+          </span>
+          <span *ngIf="notificacionesEnColaError" class="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] font-bold rounded-full w-[18px] h-[18px] flex items-center justify-center">
+            !
+          </span>
+        </button>
+
+        <!-- BOTON PERFIL -->
+        <button (click)="abrirPerfil()" class="hidden sm:flex items-center gap-2.5 h-10 px-3 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 active:scale-[0.98] transition-all cursor-pointer border-0 text-left">
+          <div class="w-6 h-6 rounded-lg bg-zinc-900 text-white font-bold text-xs flex items-center justify-center">
+            {{ userEmail ? userEmail.charAt(0).toUpperCase() : 'U' }}
+          </div>
+          <span class="text-xs font-semibold text-zinc-800 max-w-[150px] truncate">{{ userEmail }}</span>
+        </button>
+
+        <!-- BOTON CARRITO -->
+        <button (click)="isCartOpen = true" class="h-10 bg-red-600 hover:bg-red-700 active:scale-[0.98] transition-all text-white px-4 rounded-xl text-xs font-bold flex items-center gap-2.5 cursor-pointer border-0 shadow-xs">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+          </svg>
+          <span>Mi Pedido</span>
+          <span class="bg-black/20 text-white px-2 py-0.5 rounded-md font-mono text-[11px] font-bold tabular-nums">
+            {{ carrito?.items?.length || 0 }}
+          </span>
+        </button>
+
+        <!-- BOTON SALIR -->
+        <button (click)="logout()" class="w-10 h-10 bg-white hover:bg-red-50 text-zinc-500 hover:text-red-600 border border-zinc-200/90 hover:border-red-200 rounded-xl transition-colors cursor-pointer flex items-center justify-center" title="Cerrar sesión">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 
   <main class="flex-1 flex flex-col">
     
-    <!-- PANTALLA DE LOGIN -->
-    <div *ngIf="!loginDisplay" class="flex-1 flex flex-col items-center justify-center p-4">
-      <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-sm border border-stone-200 text-center">
-        <div class="w-20 h-20 bg-red-600 rounded-2xl flex items-center justify-center text-yellow-400 font-black text-5xl mx-auto mb-6 shadow-md">
-          M
-        </div>
+    <!-- PANTALLA DE LOGIN (Split Layout Asimétrico moderno, sin sesgo de caja centrada simple) -->
+    <div *ngIf="!loginDisplay" class="flex-1 flex items-center justify-center px-6 lg:px-12 py-12">
+      <div class="w-full max-w-[1100px] bg-white rounded-3xl card-elevated overflow-hidden grid grid-cols-1 lg:grid-cols-12">
         
-        <h2 class="text-2xl font-black mb-2">Pedidos360</h2>
-        <p class="text-stone-500 mb-8 text-sm">
-          Portal Corporativo Seguro.<br/>
-          Inicia sesi&oacute;n para acceder al cat&aacute;logo.
-        </p>
+        <!-- Columna Izquierda: Identidad visual de marca gastronómica -->
+        <div class="lg:col-span-7 bg-zinc-950 text-white p-8 lg:p-12 flex flex-col justify-between relative overflow-hidden">
+          <div class="relative z-10">
+            <div class="inline-flex items-center gap-2 bg-white/10 text-amber-300 text-xs font-bold px-3 py-1 rounded-full mb-6">
+              <span>Pedidos Online &amp; Retiro Express</span>
+            </div>
+            <h2 class="text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight text-white max-w-md">
+              Tus clásicos favoritos, recién preparados y sin filas.
+            </h2>
+            <p class="text-zinc-400 text-sm mt-4 max-w-md leading-relaxed">
+              Arma tu pedido en segundos, recibe sugerencias basadas en tus gustos y sigue el estado de tu preparación en tiempo real.
+            </p>
+          </div>
 
-        <div class="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-left text-sm flex items-start gap-3">
-          <p>La autenticaci&oacute;n est&aacute; delegada a <strong>Microsoft Entra ID</strong>. Tus peticiones usar&aacute;n Tokens JWT.</p>
+          <div class="grid grid-cols-3 gap-4 pt-10 mt-10 border-t border-white/10 relative z-10">
+            <div>
+              <span class="font-mono text-xl font-extrabold text-amber-400 block tabular-nums">15 min</span>
+              <span class="text-xs text-zinc-400">Tiempo medio de entrega</span>
+            </div>
+            <div>
+              <span class="font-mono text-xl font-extrabold text-white block tabular-nums">100%</span>
+              <span class="text-xs text-zinc-400">Ingredientes frescos</span>
+            </div>
+            <div>
+              <span class="font-mono text-xl font-extrabold text-emerald-400 block tabular-nums">24/7</span>
+              <span class="text-xs text-zinc-400">Pago protegido</span>
+            </div>
+          </div>
         </div>
 
-        <button 
-          (click)="login()"
-          class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#0078D4] hover:bg-[#006cbd] text-white rounded-xl font-bold shadow-md transition-all cursor-pointer"
-        >
-          Iniciar sesi&oacute;n con Microsoft
-        </button>
+        <!-- Columna Derecha: Formulario de Acceso -->
+        <div class="lg:col-span-5 p-8 lg:p-12 flex flex-col justify-center bg-white">
+          <div class="w-12 h-12 bg-[#DA291C] rounded-2xl flex items-center justify-center mb-6 shadow-xs">
+            <svg class="w-7 h-7" viewBox="0 0 64 64" fill="none">
+              <path d="M14 50c0-20 5-34 11-34 4.8 0 7 13 7 29 0-16 2.2-29 7-29 6 0 11 14 11 34" stroke="#FFC72C" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          
+          <h3 class="text-2xl font-extrabold text-zinc-900 tracking-tight">Iniciar sesión</h3>
+          <p class="text-zinc-500 mt-1.5 text-sm leading-relaxed mb-8">
+            Ingresa con tu cuenta para acceder al menú, guardar tu carrito y revisar tus pedidos.
+          </p>
+
+          <button 
+            (click)="login()"
+            class="w-full flex items-center justify-center gap-3 px-6 py-3.5 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] text-white rounded-xl font-semibold text-sm shadow-xs transition-all cursor-pointer border-0"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 21 21" fill="none">
+              <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+              <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+              <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+              <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+            </svg>
+            <span>Continuar con Microsoft</span>
+          </button>
+
+          <div class="mt-6 pt-6 border-t border-zinc-100 flex items-center gap-2.5 text-xs text-zinc-400">
+            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Tus pagos y datos personales están protegidos.</span>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- PANTALLA DEL CATÁLOGO / SISTEMA -->
-    <div *ngIf="loginDisplay" class="max-w-5xl mx-auto w-full p-6">
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 mb-6">
-        <h2 class="text-2xl font-black mb-4 text-stone-800">Men&uacute; de Productos</h2>
-        <p class="text-stone-500 mb-6">Aqu&iacute; ver&aacute;s los productos servidos desde el API Gateway.</p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div *ngFor="let p of productos" class="bg-stone-50 rounded-xl p-4 border border-stone-100 flex flex-col">
-            <div class="h-32 bg-stone-200 rounded-lg mb-4 flex items-center justify-center">
-              <span class="text-stone-400 font-bold">🍔 {{ p.nombre }}</span>
+    <!-- PANTALLA PRINCIPAL DE TIENDA (Mismo contenedor max-w-[1440px] y márgenes px-6 lg:px-12 que el Navbar) -->
+    <div *ngIf="loginDisplay" class="w-full max-w-[1440px] mx-auto px-6 lg:px-12 py-8 space-y-10">
+
+      <!-- SECCIÓN 1: PARA TI / TOP 5 PERSONALIZADO -->
+      <section *ngIf="recomendacionesData?.productosRecomendados?.length" class="bg-white rounded-2xl p-6 lg:p-7 card-elevated">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-5 mb-6 border-b border-zinc-100">
+          <div>
+            <div class="flex flex-wrap items-center gap-2.5">
+              <span class="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200/80 px-2.5 py-0.5 rounded-md">
+                <svg class="w-3.5 h-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Para ti
+              </span>
+              <h2 class="text-lg font-extrabold text-zinc-950 tracking-tight">Tus Favoritos Recomendados</h2>
+              <span class="text-xs font-semibold text-zinc-600 bg-zinc-100 px-2.5 py-0.5 rounded-md">
+                Preferencia: {{ recomendacionesData.categoriaAfin }}
+              </span>
             </div>
-            <h3 class="font-black text-lg mb-1">{{ p.nombre }}</h3>
-            <p class="text-stone-500 text-sm mb-4 flex-1">{{ p.descripcion }}</p>
-            <div class="flex justify-between items-center mt-auto">
-              <span class="font-black text-green-600 text-lg">${{ p.precio }}</span>
-              <button (click)="agregarAlCarrito(p)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm text-sm transition-colors cursor-pointer">
-                Agregar
-              </button>
-            </div>
+            <p class="text-xs text-zinc-500 mt-1">Ranking actualizado automáticamente según lo que ves, agregas al carrito y compras.</p>
           </div>
-          <div *ngIf="productos.length === 0" class="col-span-3 text-center text-stone-500 py-10">
-            No hay productos disponibles. Agrega algunos en la base de datos de ms-productos.
+
+          <!-- Indicadores discretos de actividad y protección -->
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2 bg-zinc-50 border border-zinc-200/70 px-3 py-1.5 rounded-xl">
+              <span class="text-[11px] font-medium text-zinc-500">Actividad:</span>
+              <span class="font-mono text-xs font-bold text-zinc-900 tabular-nums">{{ recomendacionesData.totalEventosClickstream || 0 }}</span>
+            </div>
+
+            <div class="flex items-center gap-2 bg-red-50/60 border border-red-200/70 px-3 py-1.5 rounded-xl">
+              <svg class="w-3.5 h-3.5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span class="text-[11px] font-medium text-red-700">Intentos bloqueados:</span>
+              <span class="font-mono text-xs font-bold text-red-700 tabular-nums">{{ recomendacionesData.totalBloqueosFraude || 0 }}</span>
+            </div>
           </div>
         </div>
 
-      </div>
+        <!-- Grilla de 5 columnas en pantallas grandes para el Top 5 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div *ngFor="let rec of recomendacionesData.productosRecomendados; let i = index"
+               class="group bg-zinc-50/60 hover:bg-white rounded-xl p-4 border border-zinc-200/70 hover:border-zinc-300 transition-all flex flex-col justify-between gap-3">
+            <div>
+              <div class="flex items-center justify-between gap-1.5 mb-2.5">
+                <span class="inline-flex items-center font-mono text-[10px] font-extrabold px-2 py-0.5 rounded-md tabular-nums"
+                      [ngClass]="(rec.rankPosition || (i + 1)) === 1 ? 'bg-amber-500 text-white' : 'bg-zinc-900 text-white'">
+                  #{{ rec.rankPosition || (i + 1) }} Recomendado
+                </span>
+                <span *ngIf="rec.score > 0" class="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 tabular-nums">
+                  {{ rec.score }} pts
+                </span>
+              </div>
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
+                {{ rec.categoria || 'Especialidad' }}
+              </span>
+              <h4 class="font-bold text-zinc-900 text-sm truncate mt-0.5" [title]="rec.nombre">{{ rec.nombre }}</h4>
+            </div>
+
+            <div class="flex items-center justify-between pt-3 border-t border-zinc-200/60 gap-2">
+              <span class="font-mono font-extrabold text-zinc-950 text-sm tabular-nums">${{ rec.precio | number }}</span>
+              <button (click)="agregarAlCarrito(rec)" class="bg-zinc-900 hover:bg-red-600 active:scale-[0.98] text-white font-semibold py-1.5 px-3 rounded-lg text-xs transition-all cursor-pointer shrink-0 flex items-center gap-1 border-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Agregar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2: MENÚ PRINCIPAL -->
+      <section class="space-y-6">
+        <!-- Barra de título, categorías y buscador móvil -->
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-extrabold text-zinc-950 tracking-tight">Explora Nuestro Men&uacute;</h2>
+            <p class="text-zinc-500 text-sm mt-1">Selecciona una categor&iacute;a o busca tu producto preferido.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Categorías visibles en todas las resoluciones -->
+            <button *ngFor="let cat of ['Todos', 'Hamburguesas', 'Acompañamientos', 'Bebidas', 'Postres']"
+                    (click)="filtrarCatalogo(cat)"
+                    class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border"
+                    [ngClass]="categoriaActiva === cat ? 'bg-red-600 text-white border-red-600 shadow-xs' : 'bg-white text-zinc-600 border-zinc-200/90 hover:bg-zinc-100 hover:text-zinc-900'">
+              {{ cat }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Buscador visible en móvil / tablet -->
+        <div class="flex md:hidden items-center gap-2">
+          <input type="text"
+                 [(ngModel)]="busquedaTexto"
+                 (keyup.enter)="filtrarCatalogo()"
+                 placeholder="Buscar por nombre o ingrediente..."
+                 class="flex-1 px-3.5 py-2.5 rounded-xl border border-zinc-200 bg-white text-xs text-zinc-900 focus:outline-none focus:border-zinc-900" />
+          <button (click)="filtrarCatalogo()"
+                  class="px-4 py-2.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl cursor-pointer border-0">
+            Buscar
+          </button>
+        </div>
+        
+        <!-- GRILLA DE PRODUCTOS (4 columnas en desktop ancho para aprovechar los márgenes estándar) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div *ngFor="let p of productos" class="group bg-white rounded-2xl p-5 card-elevated card-elevated-hover transition-all flex flex-col">
+            <!-- Área visual del producto -->
+            <div (click)="verDetalleProducto(p)" class="h-40 bg-gradient-to-br from-zinc-100 via-zinc-50 to-amber-50/40 rounded-xl mb-4 p-4 flex flex-col justify-between cursor-pointer border border-zinc-200/50 group-hover:border-zinc-300/80 transition-colors relative overflow-hidden">
+              <div class="flex items-center justify-between w-full z-10">
+                <span *ngIf="p.categoria" class="text-[10px] font-bold uppercase tracking-wider bg-white/95 text-zinc-700 border border-zinc-200/80 px-2.5 py-0.5 rounded-md">
+                  {{ p.categoria }}
+                </span>
+                <span class="text-[11px] font-semibold text-zinc-400 group-hover:text-zinc-800 transition-colors flex items-center gap-0.5">
+                  <span>Ver detalle</span>
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </div>
+
+              <div class="my-auto flex items-center gap-3.5 z-10">
+                <div class="w-12 h-12 rounded-2xl bg-white border border-zinc-200/80 flex items-center justify-center text-red-600 font-extrabold text-base shadow-2xs shrink-0">
+                  {{ p.nombre?.substring(0, 2)?.toUpperCase() }}
+                </div>
+                <span class="font-extrabold text-zinc-900 text-sm line-clamp-2 leading-snug">{{ p.nombre }}</span>
+              </div>
+            </div>
+
+            <h3 class="font-extrabold text-zinc-950 text-base mb-1.5">{{ p.nombre }}</h3>
+            <p class="text-zinc-500 text-xs leading-relaxed mb-5 flex-1">{{ p.descripcion }}</p>
+
+            <div class="flex justify-between items-center pt-4 border-t border-zinc-100 mt-auto gap-2">
+              <div>
+                <span class="text-[10px] uppercase tracking-wider font-semibold text-zinc-400 block">Precio</span>
+                <span class="font-mono font-extrabold text-zinc-950 text-lg tabular-nums">${{ p.precio | number }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button (click)="verDetalleProducto(p)" class="h-9 px-3 bg-zinc-100 hover:bg-zinc-200 active:scale-[0.98] text-zinc-700 font-semibold rounded-xl text-xs transition-all cursor-pointer border-0 flex items-center gap-1" title="Ver ingredientes y detalle">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+                <button (click)="agregarAlCarrito(p)" class="h-9 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-semibold px-4 rounded-xl shadow-xs text-xs transition-all cursor-pointer border-0 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Agregar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="productos.length === 0" class="col-span-full text-center py-16 bg-white rounded-2xl card-elevated">
+            <svg class="w-8 h-8 text-zinc-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <p class="text-sm font-bold text-zinc-800">No encontramos productos para tu búsqueda</p>
+            <p class="text-xs text-zinc-500 mt-1">Prueba seleccionando otra categoría o limpiando el filtro.</p>
+          </div>
+        </div>
+
+      </section>
     </div>
 
   </main>
@@ -87,83 +330,261 @@
   <!-- CARRITO SIDEBAR -->
   <div *ngIf="isCartOpen" class="fixed inset-0 z-50 flex justify-end">
     <!-- Overlay -->
-    <div class="fixed inset-0 bg-black/40 transition-opacity" (click)="isCartOpen = false"></div>
+    <div class="fixed inset-0 bg-zinc-950/40 backdrop-blur-xs transition-opacity" (click)="isCartOpen = false"></div>
     
     <!-- Sidebar -->
-    <div class="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-in">
-      <div class="flex items-center justify-between p-6 border-b border-stone-100">
-        <h2 class="text-xl font-black text-stone-800 flex items-center gap-2">🛒 Tu Carrito</h2>
-        <button (click)="isCartOpen = false" class="text-stone-400 hover:text-stone-600 p-2 rounded-full hover:bg-stone-100 transition-colors font-bold text-xl cursor-pointer">
-          &times;
+    <div class="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-in z-10">
+      <div class="flex items-center justify-between px-6 py-5 border-b border-zinc-200/80">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-base font-extrabold text-zinc-950 leading-none">Tu Pedido</h2>
+            <span class="text-xs text-zinc-500 mt-1 block tabular-nums">{{ carrito?.items?.length || 0 }} productos seleccionados</span>
+          </div>
+        </div>
+        <button (click)="isCartOpen = false" class="text-zinc-400 hover:text-zinc-800 p-2 rounded-xl hover:bg-zinc-100 transition-colors cursor-pointer border-0 bg-transparent">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
       </div>
 
       <div class="flex-1 overflow-y-auto p-6">
-        <div *ngIf="!carrito?.items?.length" class="text-center text-stone-500 mt-10">
-          <div class="text-4xl mb-4">🛒</div>
-          Tu carrito está vacío.
+        <div *ngIf="!carrito?.items?.length" class="text-center py-16 px-4">
+          <div class="w-12 h-12 rounded-2xl bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          </div>
+          <p class="text-sm font-bold text-zinc-800">Tu bolsa está vacía</p>
+          <p class="text-xs text-zinc-500 mt-1">Agrega productos del menú para comenzar tu compra.</p>
         </div>
         
-        <div *ngIf="carrito?.items?.length" class="space-y-4">
-          <div *ngFor="let item of carrito.items" class="flex items-center justify-between p-4 bg-stone-50 rounded-xl border border-stone-100">
-            <div class="flex flex-col flex-1">
-              <span class="font-bold text-stone-800 text-sm">🍔 {{ getNombreProducto(item.productoId) }}</span>
-              <span class="text-stone-500 text-sm">Cant: {{ item.cantidad }} &times; ${{ item.precioUnitario }}</span>
+        <div *ngIf="carrito?.items?.length" class="space-y-3">
+          <div *ngFor="let item of carrito.items" class="flex items-center justify-between p-3.5 bg-zinc-50 rounded-xl border border-zinc-200/70">
+            <div class="flex flex-col flex-1 min-w-0 pr-3">
+              <span class="font-bold text-zinc-900 text-xs truncate">{{ getNombreProducto(item.productoId) }}</span>
+              <span class="text-zinc-500 text-xs mt-0.5 font-mono tabular-nums">{{ item.cantidad }} &times; ${{ item.precioUnitario | number }}</span>
             </div>
-            <div class="font-black text-green-600 mr-4">
-              ${{ item.cantidad * item.precioUnitario }}
+            <div class="font-mono font-bold text-zinc-950 text-sm mr-3 tabular-nums">
+              ${{ (item.cantidad * item.precioUnitario) | number }}
             </div>
-            <button (click)="eliminarDelCarrito(item.productoId)" class="w-8 h-8 flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer bg-transparent border-0">
-              🗑️
+            <button (click)="eliminarDelCarrito(item.productoId)" class="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer bg-transparent border-0" title="Quitar producto">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
             </button>
           </div>
         </div>
       </div>
       
-      <div *ngIf="carrito?.items?.length" class="p-6 border-t border-stone-100 bg-stone-50">
-        <button (click)="crearPedido()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-md transition-colors cursor-pointer">
-          Proceder al pago
+      <div *ngIf="carrito?.items?.length" class="p-6 border-t border-zinc-200/80 bg-zinc-50/70 space-y-4">
+        <!-- Modalidad de envio -->
+        <div>
+          <label class="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block mb-2">Método de Entrega</label>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button (click)="cambiarTipoEnvio('REPARTO_DOMICILIO')"
+                    class="py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center justify-center gap-2"
+                    [ngClass]="(carrito?.tipoEnvio || 'REPARTO_DOMICILIO') === 'REPARTO_DOMICILIO' ? 'bg-zinc-900 border-zinc-900 text-white shadow-xs' : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-100'">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+              </svg>
+              <span>Delivery</span>
+            </button>
+            <button (click)="cambiarTipoEnvio('RETIRO_LOCAL')"
+                    class="py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center justify-center gap-2"
+                    [ngClass]="carrito?.tipoEnvio === 'RETIRO_LOCAL' ? 'bg-zinc-900 border-zinc-900 text-white shadow-xs' : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-100'">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <span>Retiro en Local</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Resumen Totales -->
+        <div class="bg-white p-4 rounded-xl border border-zinc-200/80 flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-zinc-500">Total a Pagar</span>
+          <span class="font-mono font-extrabold text-zinc-950 text-lg tabular-nums">${{ subtotalCarrito | number }}</span>
+        </div>
+
+        <button (click)="crearPedido()" class="w-full bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-semibold py-3.5 rounded-xl shadow-sm transition-all cursor-pointer border-0 text-sm flex items-center justify-center gap-2">
+          <span>Ir a Pagar</span>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
         </button>
       </div>
     </div>
   </div>
+
+  <!-- MODAL DETALLE DE PRODUCTO -->
+  <div *ngIf="productoDetalle" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-zinc-950/50 backdrop-blur-xs" (click)="productoDetalle = null"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl border border-zinc-200/80 w-full max-w-md p-6 z-10 animate-scale-up">
+      <div class="flex justify-between items-start gap-4 mb-4">
+        <div>
+          <span *ngIf="productoDetalle.categoria" class="inline-block text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-700 border border-red-200/80 px-2.5 py-0.5 rounded-md">
+            {{ productoDetalle.categoria }}
+          </span>
+          <h3 class="text-xl font-extrabold text-zinc-950 mt-2">{{ productoDetalle.nombre }}</h3>
+        </div>
+        <button (click)="productoDetalle = null" class="text-zinc-400 hover:text-zinc-800 p-1.5 rounded-xl hover:bg-zinc-100 cursor-pointer border-0 bg-transparent">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <p class="text-zinc-600 text-xs leading-relaxed mb-5">{{ productoDetalle.descripcion }}</p>
+
+      <div class="flex justify-between items-center p-4 bg-zinc-50 rounded-xl border border-zinc-200/70 mb-6">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Precio Unitario</span>
+          <span class="text-2xl font-mono font-extrabold text-zinc-950 tabular-nums">${{ productoDetalle.precio | number }}</span>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Disponibilidad</span>
+          <span class="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md inline-block mt-0.5 tabular-nums">
+            {{ productoDetalle.stock }} disponibles
+          </span>
+        </div>
+      </div>
+
+      <div class="flex gap-2.5">
+        <button (click)="productoDetalle = null" class="flex-1 py-2.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 font-semibold text-xs text-zinc-700 cursor-pointer">
+          Cerrar
+        </button>
+        <button (click)="agregarAlCarrito(productoDetalle); productoDetalle = null" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-semibold text-xs cursor-pointer border-0 flex items-center justify-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Agregar al Pedido</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL DE PAGO -->
-  <div *ngIf="mostrarModalPago" class="fixed inset-0 z-50 flex items-center justify-center">
+  <div *ngIf="mostrarModalPago" class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <!-- Overlay -->
-    <div class="fixed inset-0 bg-black/60" (click)="cancelarPago()"></div>
+    <div class="fixed inset-0 bg-zinc-950/50 backdrop-blur-xs" (click)="cancelarPago()"></div>
     
     <!-- Modal -->
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8 z-10">
-      <h2 class="text-2xl font-black text-stone-800 mb-2">💳 Confirmar Pago</h2>
-      <p class="text-stone-500 text-sm mb-6">Pedido #{{ pedidoPendientePago?.id }}</p>
+    <div class="relative bg-white rounded-2xl shadow-2xl border border-zinc-200/80 w-full max-w-md p-6 z-10 animate-scale-up">
+      <div class="flex items-center justify-between pb-4 mb-5 border-b border-zinc-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-base font-extrabold text-zinc-950 leading-none">Finalizar Compra</h2>
+            <p class="text-xs text-zinc-500 mt-1 font-mono tabular-nums">Orden #{{ pedidoPendientePago?.id }}</p>
+          </div>
+        </div>
+        <button (click)="cancelarPago()" class="text-zinc-400 hover:text-zinc-800 p-1.5 rounded-xl hover:bg-zinc-100 cursor-pointer border-0 bg-transparent">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
       
       <!-- Monto -->
-      <div class="bg-green-50 rounded-xl p-4 mb-6 border border-green-200">
-        <p class="text-xs font-bold text-green-600 uppercase tracking-wider">Total a pagar</p>
-        <p class="text-3xl font-black text-green-700">${{ pedidoPendientePago?.total | number }}</p>
+      <div class="bg-zinc-950 text-white rounded-xl p-4 mb-5 flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Total a Pagar</p>
+          <p class="text-xs text-zinc-300 mt-0.5">Transacción encriptada y protegida</p>
+        </div>
+        <p class="text-2xl font-mono font-extrabold text-emerald-400 tabular-nums">${{ pedidoPendientePago?.total | number }}</p>
       </div>
 
       <!-- Metodo de pago -->
-      <div class="mb-6">
-        <label class="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-3">Metodo de Pago</label>
-        <div class="grid grid-cols-2 gap-3">
+      <div class="mb-4">
+        <label class="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block mb-2">Medio de Pago</label>
+        <div class="grid grid-cols-2 gap-2">
           <button *ngFor="let metodo of ['TARJETA_CREDITO', 'TARJETA_DEBITO', 'WEBPAY', 'EFECTIVO']" 
                   (click)="metodoPagoSeleccionado = metodo"
-                  class="p-3 rounded-xl border-2 text-sm font-bold transition-all cursor-pointer"
-                  [ngClass]="metodoPagoSeleccionado === metodo ? 'border-green-500 bg-green-50 text-green-700' : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'">
-            {{ metodo === 'TARJETA_CREDITO' ? '💳 T. Credito' : metodo === 'TARJETA_DEBITO' ? '💳 T. Debito' : metodo === 'WEBPAY' ? '🌐 WebPay' : '💵 Efectivo' }}
+                  class="p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  [ngClass]="metodoPagoSeleccionado === metodo ? 'border-zinc-900 bg-zinc-900 text-white shadow-2xs' : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50'">
+            <span>{{ metodo === 'TARJETA_CREDITO' ? 'Tarjeta Crédito' : metodo === 'TARJETA_DEBITO' ? 'Tarjeta Débito' : metodo === 'WEBPAY' ? 'WebPay Plus' : 'Efectivo' }}</span>
           </button>
         </div>
       </div>
 
+      <!-- Numero de tarjeta (Control Antifraude) -->
+      <div *ngIf="metodoPagoSeleccionado === 'TARJETA_CREDITO' || metodoPagoSeleccionado === 'TARJETA_DEBITO'" class="mb-5">
+        <label class="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block mb-1.5">Número de Tarjeta</label>
+        <input type="text"
+               [(ngModel)]="numeroTarjeta"
+               placeholder="4532 0151 1283 4242"
+               class="w-full p-2.5 rounded-xl border border-zinc-200 bg-zinc-100/70 font-mono text-xs text-zinc-900 focus:outline-none focus:bg-white focus:border-zinc-900 tabular-nums" />
+        <div class="flex items-center gap-1.5 text-[11px] text-zinc-500 mt-1.5">
+          <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span>Protección activa contra cargos duplicados o sospechosos.</span>
+        </div>
+      </div>
+
+      <!-- Informacion WebPay Plus (Transbank SDK + Kafka Velocity Check) -->
+      <div *ngIf="metodoPagoSeleccionado === 'WEBPAY'" class="mb-5 bg-zinc-50 rounded-xl p-3.5 border border-zinc-200/80 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-extrabold text-zinc-900 uppercase tracking-wider">Pasarela Transbank Webpay Plus</span>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border tabular-nums"
+                [ngClass]="estadoVelocityCliente?.bloqueado ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'">
+            {{ estadoVelocityCliente?.bloqueado ? 'Bloqueado (30 min)' : 'Habilitado' }}
+          </span>
+        </div>
+        <p class="text-[11px] text-zinc-600 leading-relaxed">
+          Serás redirigido al portal seguro de Transbank para autorizar el cargo. Auditoría de frecuencia activa en Kafka (<span class="font-mono text-zinc-800">payment-attempts</span>).
+        </p>
+        <div class="text-[10px] font-mono text-zinc-500 bg-white p-2 rounded-lg border border-zinc-200/70 space-y-0.5">
+          <div><strong class="text-zinc-700">VISA Aprobada:</strong> 4051 8856 0044 6623 &bull; CVV 123</div>
+          <div><strong class="text-zinc-700">Mastercard Rechazada:</strong> 5186 0595 5959 0568 &bull; CVV 123</div>
+          <div><strong class="text-zinc-700">RUT / Clave prueba:</strong> 11.111.111-1 &bull; Clave 123</div>
+        </div>
+      </div>
+
       <!-- Botones -->
-      <div class="flex gap-3">
-        <button (click)="cancelarPago()" class="flex-1 py-3 rounded-xl border-2 border-stone-200 text-stone-600 font-bold hover:bg-stone-50 transition-colors cursor-pointer">
-          Cancelar
+      <div class="flex gap-2.5">
+        <button (click)="cancelarPago()" class="flex-1 py-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-600 text-xs font-semibold hover:bg-zinc-50 transition-colors cursor-pointer">
+          Volver
         </button>
         <button (click)="confirmarPago()" [disabled]="procesandoPago"
-                class="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold transition-colors cursor-pointer disabled:opacity-50">
-          {{ procesandoPago ? 'Procesando...' : 'Pagar Ahora' }}
+                class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white text-xs font-semibold transition-all cursor-pointer border-0 disabled:opacity-50">
+          {{ procesandoPago ? 'Procesando...' : (metodoPagoSeleccionado === 'WEBPAY' ? 'Pagar con WebPay' : 'Pagar Ahora') }}
+        </button>
+      </div>
+
+      <!-- Boton Prueba de Seguridad Antifraude (Tarjeta Directa) -->
+      <div *ngIf="metodoPagoSeleccionado === 'TARJETA_CREDITO' || metodoPagoSeleccionado === 'TARJETA_DEBITO'" class="mt-3 pt-3 border-t border-zinc-100">
+        <button (click)="simularRafagaAntifraude()" [disabled]="procesandoPago"
+                class="w-full py-2 px-3 rounded-xl border border-red-200 bg-red-50/70 hover:bg-red-100 text-red-700 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>Probar bloqueo de seguridad (4 cobros seguidos en &lt;10s)</span>
+        </button>
+      </div>
+
+      <!-- Boton Prueba Velocity Check Kafka + WebPay (3+ intentos en <10s -> Bloqueo 30 min) -->
+      <div *ngIf="metodoPagoSeleccionado === 'WEBPAY'" class="mt-3 pt-3 border-t border-zinc-100 space-y-2">
+        <button (click)="simularRafagaVelocityWebpay()" [disabled]="procesandoPago"
+                class="w-full py-2 px-3 rounded-xl border border-red-200 bg-red-50/70 hover:bg-red-100 text-red-700 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>Simular ráfaga Kafka Velocity Check (3+ intentos &lt;10s &rarr; 429)</span>
+        </button>
+        <button *ngIf="estadoVelocityCliente?.bloqueado" (click)="desbloquearMiCuentaVelocity()"
+                class="w-full py-1.5 px-3 rounded-xl border border-zinc-300 bg-white hover:bg-zinc-100 text-zinc-700 text-[11px] font-semibold transition-colors cursor-pointer">
+          Restablecer bloqueo temporal de 30 min (Modo Prueba)
         </button>
       </div>
     </div>
@@ -172,108 +593,308 @@
   <!-- PERFIL SIDEBAR -->
   <div *ngIf="isProfileOpen" class="fixed inset-0 z-50 flex justify-end">
     <!-- Overlay -->
-    <div class="fixed inset-0 bg-black/40 transition-opacity" (click)="isProfileOpen = false"></div>
+    <div class="fixed inset-0 bg-zinc-950/40 backdrop-blur-xs transition-opacity" (click)="isProfileOpen = false"></div>
     
     <!-- Sidebar -->
-    <div class="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-in">
-      <div class="flex items-center justify-between p-6 border-b border-stone-100 bg-blue-600 text-white">
-        <h2 class="text-xl font-black flex items-center gap-2">👤 Tu Perfil Corporativo</h2>
-        <button (click)="isProfileOpen = false" class="text-white hover:text-blue-100 p-2 rounded-full hover:bg-blue-700 transition-colors font-bold text-xl cursor-pointer border-0 bg-transparent">
-          &times;
+    <div class="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-in z-10">
+      <div class="flex items-center justify-between px-6 py-5 border-b border-zinc-200/80 bg-zinc-950 text-white">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-red-600 text-white font-extrabold text-sm flex items-center justify-center">
+            {{ userProfile?.name?.charAt(0) || 'U' }}
+          </div>
+          <div>
+            <h2 class="text-sm font-extrabold leading-none">Mi Cuenta y Actividad</h2>
+            <span class="text-[11px] text-zinc-400 block mt-1">{{ userProfile?.email }}</span>
+          </div>
+        </div>
+        <button (click)="isProfileOpen = false" class="text-zinc-400 hover:text-white p-1.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer border-0 bg-transparent">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-6 bg-stone-50">
-        <div *ngIf="userProfile" class="space-y-6">
-          <div class="flex justify-center mb-6">
-            <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-black text-4xl shadow-inner border-4 border-white">
-              {{ userProfile.name?.charAt(0) || 'U' }}
-            </div>
-          </div>
+      <div class="flex-1 overflow-y-auto p-6 bg-zinc-50 space-y-5">
+        <div *ngIf="userProfile" class="space-y-5">
           
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100">
-            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Nombre Completo</h3>
-            <p class="font-bold text-stone-800 text-lg">{{ userProfile.name }}</p>
-          </div>
-
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100">
-            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Correo (UPN)</h3>
-            <p class="text-stone-600 font-medium">{{ userProfile.email }}</p>
-          </div>
-          
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100">
-            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Permisos en MSAL</h3>
-            <div class="mt-2 inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm font-bold">
-              {{ userProfile.roles }}
+          <!-- DATOS DE CUENTA -->
+          <div class="bg-white rounded-xl p-4 shadow-2xs border border-zinc-200/80 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Cliente</span>
+              <p class="font-bold text-zinc-900 text-sm mt-0.5">{{ userProfile.name }}</p>
+              <span class="text-xs text-zinc-500">{{ userProfile.email }}</span>
             </div>
+            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2.5 py-0.5 rounded-md text-[11px] font-semibold">
+              Cuenta Verificada
+            </span>
           </div>
 
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100">
-            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Tenant ID (Directorio)</h3>
-            <p class="text-stone-500 text-xs font-mono break-all">{{ userProfile.tenantId }}</p>
+          <!-- ESTADO VELOCITY CHECK WEBPAY (Bloqueo 30 min) -->
+          <div *ngIf="estadoVelocityCliente?.bloqueado" class="bg-amber-50 rounded-xl p-4 border border-amber-300/90 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-amber-900 uppercase tracking-wider">Bloqueo Temporal WebPay (30 min)</span>
+              <span class="text-[10px] font-mono font-bold bg-amber-800 text-white px-2 py-0.5 rounded-md tabular-nums">
+                {{ estadoVelocityCliente.cantidadIntentos }} intentos &lt;10s
+              </span>
+            </div>
+            <p class="text-xs text-amber-800 leading-snug">
+              Tu cuenta (<span class="font-mono">{{ estadoVelocityCliente.idCliente }}</span>) fue penalizada preventivamente hasta <span class="font-mono font-semibold">{{ estadoVelocityCliente.bloqueadoHasta | date:'shortTime' }}</span> por alta frecuencia de peticiones.
+            </p>
+            <button (click)="desbloquearMiCuentaVelocity()"
+                    class="w-full py-2 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition-colors cursor-pointer border-0">
+              Restablecer bloqueo ahora (Modo Prueba)
+            </button>
           </div>
 
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100">
-            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Object ID (Usuario)</h3>
-            <p class="text-stone-500 text-xs font-mono break-all">{{ userProfile.oid }}</p>
+          <!-- ALERTAS ANTIFRAUDE -->
+          <div *ngIf="alertasFraude.length > 0" class="bg-red-50/70 rounded-xl p-4 border border-red-200/90">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <h3 class="text-xs font-extrabold text-red-800 uppercase tracking-wider">Alertas de Seguridad</h3>
+              </div>
+              <span class="text-[11px] font-mono font-bold bg-red-600 text-white px-2 py-0.5 rounded-md tabular-nums">{{ alertasFraude.length }}</span>
+            </div>
+
+            <div class="space-y-2.5">
+              <div *ngFor="let alerta of alertasFraude" class="bg-white p-3 rounded-lg border border-red-200/70">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="font-mono text-xs font-bold text-red-700 tabular-nums">{{ alerta.tarjetaEnmascarada }}</span>
+                  <span class="text-[10px] font-mono font-bold bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-md tabular-nums">
+                    {{ alerta.intentosVentana10s }} intentos / 10s
+                  </span>
+                </div>
+                <p class="text-xs text-zinc-600 leading-snug">{{ alerta.motivo }}</p>
+                <p class="text-[10px] font-mono text-zinc-400 mt-1 tabular-nums">Orden #{{ alerta.pedidoId }} &bull; {{ alerta.fechaAlerta | date:'short' }}</p>
+              </div>
+            </div>
           </div>
 
           <!-- NOTIFICACIONES -->
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 mt-2 mb-6">
-            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Notificaciones</h3>
+          <div class="bg-white rounded-xl p-4 shadow-2xs border border-zinc-200/80">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-extrabold text-zinc-800 uppercase tracking-wider">Notificaciones</h3>
+              <span class="text-[11px] font-mono text-zinc-400 tabular-nums">{{ notificaciones.length }}</span>
+            </div>
             
-            <div *ngIf="notificaciones.length === 0" class="text-sm text-stone-500 italic">
-              Sin notificaciones.
+            <div *ngIf="notificacionesEnColaError" class="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium flex items-start gap-2.5">
+              <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Estamos teniendo problemas con las notificaciones, tu notificación está en cola y se mostrará en breve.</span>
             </div>
 
-            <div *ngFor="let notif of notificaciones" class="mb-3 last:mb-0">
-              <div class="flex items-start gap-2 p-2 rounded-lg" [ngClass]="{'bg-blue-50': !notif.leida, 'bg-stone-50': notif.leida}">
-                <span class="text-lg">{{ notif.tipo === 'PAGO_APROBADO' ? '✅' : notif.tipo === 'PAGO_RECHAZADO' ? '❌' : '📦' }}</span>
-                <div class="flex-1">
-                  <p class="text-xs text-stone-700 font-medium">{{ notif.mensaje }}</p>
-                  <p class="text-xs text-stone-400 mt-1">{{ notif.fechaCreacion | date:'short' }}</p>
+            <div *ngIf="notificaciones.length === 0 && !notificacionesEnColaError" class="text-xs text-zinc-400 py-4 text-center">
+              No tienes notificaciones pendientes.
+            </div>
+
+            <div class="space-y-2">
+              <div *ngFor="let notif of notificaciones">
+                <div class="flex items-start gap-2.5 p-3 rounded-xl border transition-colors"
+                     [ngClass]="{
+                       'bg-red-50/60 border-red-200/80': notif.tipo === 'ALERTA_FRAUDE',
+                       'bg-blue-50/50 border-blue-200/70': !notif.leida && notif.tipo !== 'ALERTA_FRAUDE',
+                       'bg-zinc-50/70 border-zinc-200/60': notif.leida && notif.tipo !== 'ALERTA_FRAUDE'
+                     }">
+                  <!-- Icono SVG según tipo -->
+                  <div class="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                       [ngClass]="{
+                         'bg-red-100 text-red-600': notif.tipo === 'ALERTA_FRAUDE' || notif.tipo === 'PAGO_RECHAZADO',
+                         'bg-emerald-100 text-emerald-600': notif.tipo === 'PAGO_APROBADO',
+                         'bg-zinc-200 text-zinc-700': notif.tipo !== 'ALERTA_FRAUDE' && notif.tipo !== 'PAGO_RECHAZADO' && notif.tipo !== 'PAGO_APROBADO'
+                       }">
+                    <svg *ngIf="notif.tipo === 'PAGO_APROBADO'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <svg *ngIf="notif.tipo === 'ALERTA_FRAUDE' || notif.tipo === 'PAGO_RECHAZADO'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <svg *ngIf="notif.tipo !== 'ALERTA_FRAUDE' && notif.tipo !== 'PAGO_RECHAZADO' && notif.tipo !== 'PAGO_APROBADO'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs text-zinc-800 font-medium leading-snug">{{ notif.mensaje }}</p>
+                    <p class="text-[10px] font-mono text-zinc-400 mt-1 tabular-nums">{{ notif.fechaCreacion | date:'short' }}</p>
+                  </div>
+
+                  <button *ngIf="!notif.leida" (click)="marcarNotificacionLeida(notif.id)" class="text-[11px] text-blue-600 hover:text-blue-800 font-semibold cursor-pointer bg-transparent border-0 shrink-0">
+                    Leído
+                  </button>
                 </div>
-                <button *ngIf="!notif.leida" (click)="marcarNotificacionLeida(notif.id)" class="text-xs text-blue-500 hover:text-blue-700 font-bold cursor-pointer">✓</button>
               </div>
             </div>
           </div>
 
           <!-- HISTORIAL DE COMPRAS -->
-          <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 mt-6">
-            <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Mis Compras</h3>
+          <div class="bg-white rounded-xl p-4 shadow-2xs border border-zinc-200/80">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-extrabold text-zinc-800 uppercase tracking-wider">Mis Pedidos</h3>
+              <span class="text-[11px] font-mono text-zinc-400 tabular-nums">{{ pedidos.length }} órdenes</span>
+            </div>
             
-            <div *ngIf="pedidos.length === 0" class="text-sm text-stone-500 italic">
-              Aún no tienes pedidos.
+            <div *ngIf="pedidos.length === 0" class="text-xs text-zinc-400 py-4 text-center">
+              Aún no registras pedidos.
             </div>
 
-            <div *ngFor="let pedido of pedidos" class="mb-4 border-b border-stone-100 pb-3 last:border-0 last:pb-0 last:mb-0">
-              <div class="flex justify-between items-center mb-1">
-                <span class="font-bold text-stone-800 text-sm">Pedido #{{ pedido.id }}</span>
-                <span class="text-xs font-bold px-2 py-1 rounded-full" 
-                      [ngClass]="{'bg-yellow-100 text-yellow-800': pedido.estado === 'PENDIENTE', 'bg-green-100 text-green-800': pedido.estado === 'ENTREGADO' || pedido.estado === 'LISTO_PARA_ENTREGA'}">
-                  {{ pedido.estado }}
-                </span>
-              </div>
-              <div class="text-xs text-stone-500 mb-2">{{ pedido.fechaCreacion | date:'medium' }}</div>
-              <div class="font-bold text-blue-600 mb-2">${{ pedido.total | number }}</div>
-              
-              <!-- ACCIONES DE PEDIDO (Solo si está pendiente) -->
-              <div *ngIf="pedido.estado === 'PENDIENTE'" class="flex gap-2">
-                <button (click)="cambiarEstadoPedido(pedido.id, 'ENTREGADO')" class="flex-1 bg-green-100 hover:bg-green-200 text-green-700 text-xs font-bold py-2 px-3 rounded shadow-sm border border-green-200 transition-colors">
-                  ✅ Recibido
-                </button>
-                <button (click)="cambiarEstadoPedido(pedido.id, 'CANCELADO')" class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold py-2 px-3 rounded shadow-sm border border-red-200 transition-colors">
-                  ❌ Cancelar
-                </button>
+            <div class="space-y-3">
+              <div *ngFor="let pedido of pedidos" class="p-3.5 rounded-xl bg-zinc-50/80 border border-zinc-200/70">
+                <div class="flex justify-between items-center mb-1.5">
+                  <span class="font-mono font-bold text-zinc-900 text-xs tabular-nums">Orden #{{ pedido.id }}</span>
+                  <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border" 
+                        [ngClass]="{
+                          'bg-amber-50 text-amber-800 border-amber-200': pedido.estado === 'PENDIENTE',
+                          'bg-blue-50 text-blue-800 border-blue-200': pedido.estado === 'EN_PREPARACION',
+                          'bg-emerald-50 text-emerald-800 border-emerald-200': pedido.estado === 'ENTREGADO' || pedido.estado === 'LISTO_PARA_ENTREGA',
+                          'bg-red-50 text-red-800 border-red-200': pedido.estado === 'CANCELADO'
+                        }">
+                    {{ pedido.estado }}
+                  </span>
+                </div>
+
+                <div class="flex items-center justify-between text-xs mb-2">
+                  <span class="text-zinc-400 font-mono text-[11px] tabular-nums">{{ pedido.fechaCreacion | date:'short' }}</span>
+                  <span class="font-mono font-extrabold text-zinc-950 tabular-nums">${{ pedido.total | number }}</span>
+                </div>
+                
+                <!-- PENDIENTE DE PAGO -->
+                <div *ngIf="pedido.estado === 'PENDIENTE'" class="mt-2 pt-2 border-t border-zinc-200/60 space-y-2">
+                  <div class="text-[11px] font-medium text-amber-800 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                    <span>Pendiente de pago</span>
+                  </div>
+                  <div class="flex gap-2">
+                    <button (click)="reabrirPagoPedidoPendiente(pedido)" class="flex-1 bg-zinc-900 hover:bg-red-600 text-white text-xs font-semibold py-1.5 px-3 rounded-lg transition-colors cursor-pointer border-0">
+                      Pagar ahora
+                    </button>
+                    <button (click)="cambiarEstadoPedido(pedido.id, 'CANCELADO')" class="flex-1 bg-white hover:bg-red-50 text-red-600 border border-red-200 text-xs font-semibold py-1.5 px-3 rounded-lg transition-colors cursor-pointer">
+                      Cancelar pedido
+                    </button>
+                  </div>
+                </div>
+
+                <!-- ACCIONES DE PEDIDO -->
+                <div *ngIf="pedido.estado === 'EN_PREPARACION'" class="flex gap-2 mt-2.5 pt-2.5 border-t border-zinc-200/60">
+                  <button (click)="cambiarEstadoPedido(pedido.id, 'ENTREGADO')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-1.5 px-3 rounded-lg transition-colors cursor-pointer border-0">
+                    Confirmar Recepción
+                  </button>
+                  <button (click)="cambiarEstadoPedido(pedido.id, 'CANCELADO')" class="flex-1 bg-white hover:bg-red-50 text-red-600 border border-red-200 text-xs font-semibold py-1.5 px-3 rounded-lg transition-colors cursor-pointer">
+                    Cancelar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
       
-      <div class="p-6 border-t border-stone-200 bg-white">
-        <button (click)="logout()" class="w-full bg-stone-800 hover:bg-stone-900 text-white font-bold py-4 rounded-xl shadow-md transition-colors cursor-pointer border-0">
-          Cerrar sesión corporativa
+      <div class="p-4 border-t border-zinc-200/80 bg-white">
+        <button (click)="logout()" class="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs py-3 rounded-xl transition-colors cursor-pointer border-0 flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PERSONALIZADO DE RESULTADO / SEGURIDAD (Reemplaza a los popups genéricos) -->
+  <div *ngIf="alertaModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-zinc-950/50 backdrop-blur-xs" (click)="alertaModal = null"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl border border-zinc-200/80 w-full max-w-md p-6 z-10 animate-scale-up">
+      <div class="flex items-start gap-4">
+        <!-- Icono de estado -->
+        <div class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+             [ngClass]="{
+               'bg-emerald-100 text-emerald-600': alertaModal.tipo === 'success',
+               'bg-red-100 text-red-600': alertaModal.tipo === 'error',
+               'bg-amber-100 text-amber-600': alertaModal.tipo === 'warning',
+               'bg-blue-100 text-blue-600': alertaModal.tipo === 'info'
+             }">
+          <svg *ngIf="alertaModal.tipo === 'success'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <svg *ngIf="alertaModal.tipo === 'error'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <svg *ngIf="alertaModal.tipo === 'warning' || alertaModal.tipo === 'info'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <span *ngIf="alertaModal.subtitulo" class="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block mb-0.5 tabular-nums">
+            {{ alertaModal.subtitulo }}
+          </span>
+          <h3 class="text-base font-extrabold text-zinc-950 leading-snug">{{ alertaModal.titulo }}</h3>
+          <p class="text-xs text-zinc-600 leading-relaxed mt-1.5">{{ alertaModal.mensaje }}</p>
+        </div>
+
+        <button (click)="alertaModal = null" class="text-zinc-400 hover:text-zinc-700 p-1 rounded-lg hover:bg-zinc-100 cursor-pointer border-0 bg-transparent">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-end gap-2.5 mt-6 pt-4 border-t border-zinc-100">
+        <button (click)="alertaModal = null"
+                class="px-4 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-semibold transition-colors cursor-pointer">
+          Cerrar
+        </button>
+        <button *ngIf="alertaModal.accionPrimariaTexto"
+                (click)="ejecutarAccionAlertaModal()"
+                class="px-4 py-2 rounded-xl text-white text-xs font-semibold transition-all active:scale-[0.98] cursor-pointer border-0"
+                [ngClass]="alertaModal.tipo === 'error' ? 'bg-red-600 hover:bg-red-700' : 'bg-zinc-900 hover:bg-zinc-800'">
+          {{ alertaModal.accionPrimariaTexto }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STACK DE NOTIFICACIONES FLOTANTES (Esquina inferior derecha, lejos del Navbar y del botón Mi Pedido) -->
+  <div *ngIf="toasts.length > 0" class="fixed bottom-6 right-6 z-[60] flex flex-col gap-2.5 w-full max-w-sm pointer-events-none px-4 sm:px-0">
+    <div *ngFor="let t of toasts"
+         class="pointer-events-auto bg-zinc-950/95 backdrop-blur-md text-white rounded-2xl p-4 shadow-2xl border border-white/10 flex items-center justify-between gap-3 animate-scale-up">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+             [ngClass]="{
+               'bg-emerald-500/20 text-emerald-400': t.tipo === 'success',
+               'bg-red-500/20 text-red-400': t.tipo === 'error',
+               'bg-amber-500/20 text-amber-400': t.tipo === 'warning',
+               'bg-blue-500/20 text-blue-400': t.tipo === 'info'
+             }">
+          <svg *ngIf="t.tipo === 'success'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <svg *ngIf="t.tipo === 'error' || t.tipo === 'warning'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <svg *ngIf="t.tipo === 'info'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-bold text-white truncate">{{ t.titulo }}</p>
+          <p *ngIf="t.detalle" class="text-[11px] text-zinc-400 font-mono truncate mt-0.5 tabular-nums">{{ t.detalle }}</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button *ngIf="t.accionTexto"
+                (click)="ejecutarAccionToast(t)"
+                class="toast-action-btn px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-amber-300 text-[11px] font-bold transition-colors cursor-pointer border-0">
+          {{ t.accionTexto }}
+        </button>
+        <button (click)="cerrarToast(t.id)"
+                class="text-zinc-500 hover:text-zinc-300 p-1 rounded-lg hover:bg-white/5 transition-colors cursor-pointer border-0 bg-transparent">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
       </div>
     </div>

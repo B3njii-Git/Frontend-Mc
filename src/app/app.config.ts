@@ -56,7 +56,7 @@ export function MSALGuardConfigFactory(): MsalGuardConfiguration {
   return { 
     interactionType: InteractionType.Redirect,
     authRequest: {
-      scopes: ['User.Read']
+      scopes: ['User.Read', ...protectedResources.apiGateway.scopes]
     }
   };
 }
