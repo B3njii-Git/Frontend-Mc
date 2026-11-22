@@ -161,9 +161,9 @@
     <!-- PANTALLA PRINCIPAL DE TIENDA (Mismo contenedor max-w-[1440px] y márgenes px-6 lg:px-12 que el Navbar) -->
     <div *ngIf="loginDisplay" class="w-full max-w-[1440px] mx-auto px-6 lg:px-12 py-8 space-y-10">
 
-      <!-- SECCIÓN 1: PARA TI / TOP 5 PERSONALIZADO -->
-      <section *ngIf="recomendacionesData?.productosRecomendados?.length" class="bg-white rounded-2xl p-6 lg:p-7 card-elevated">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-5 mb-6 border-b border-zinc-100">
+      <!-- SECCIÓN 1: DASHBOARD DE MÉTRICAS EN TIEMPO REAL + TOP 5 PERSONALIZADO -->
+      <section *ngIf="recomendacionesData?.productosRecomendados?.length" class="bg-white rounded-2xl p-6 lg:p-7 card-elevated space-y-6">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-5 border-b border-zinc-100">
           <div>
             <div class="flex flex-wrap items-center gap-2.5">
               <span class="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200/80 px-2.5 py-0.5 rounded-md">
@@ -177,23 +177,47 @@
                 Preferencia: {{ recomendacionesData.categoriaAfin }}
               </span>
             </div>
-            <p class="text-xs text-zinc-500 mt-1">Ranking actualizado automáticamente según lo que ves, agregas al carrito y compras.</p>
+            <p class="text-xs text-zinc-500 mt-1">Dashboard analítico en vivo alimentado por Apache Kafka, Amazon DynamoDB y WebSockets.</p>
           </div>
 
-          <!-- Indicadores discretos de actividad y protección -->
-          <div class="flex flex-wrap items-center gap-3">
-            <div class="flex items-center gap-2 bg-zinc-50 border border-zinc-200/70 px-3 py-1.5 rounded-xl">
-              <span class="text-[11px] font-medium text-zinc-500">Actividad:</span>
-              <span class="font-mono text-xs font-bold text-zinc-900 tabular-nums">{{ recomendacionesData.totalEventosClickstream || 0 }}</span>
-            </div>
+          <!-- Estado de conexión WebSocket + Pipeline -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl border"
+                  [ngClass]="wsEstado === 'conectado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' : 'bg-blue-50 text-blue-700 border-blue-200/80'">
+              <span class="w-2 h-2 rounded-full animate-pulse"
+                    [ngClass]="wsEstado === 'conectado' ? 'bg-emerald-500' : 'bg-blue-500'"></span>
+              <span>{{ wsEstado === 'conectado' ? 'WebSocket En Vivo' : 'Tiempo Real (Auto-Sync)' }}</span>
+            </span>
+            <span class="text-[11px] font-mono font-semibold text-zinc-600 bg-zinc-100 border border-zinc-200/80 px-3 py-1.5 rounded-xl">
+              Kafka &rarr; DynamoDB
+            </span>
+          </div>
+        </div>
 
-            <div class="flex items-center gap-2 bg-red-50/60 border border-red-200/70 px-3 py-1.5 rounded-xl">
-              <svg class="w-3.5 h-3.5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              <span class="text-[11px] font-medium text-red-700">Intentos bloqueados:</span>
-              <span class="font-mono text-xs font-bold text-red-700 tabular-nums">{{ recomendacionesData.totalBloqueosFraude || 0 }}</span>
-            </div>
+        <!-- 4 MÉTRICAS ANALÍTICAS EN TIEMPO REAL -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div class="bg-zinc-50/80 border border-zinc-200/70 rounded-xl p-3.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Volumen Clickstream</span>
+            <span class="font-mono text-xl font-extrabold text-zinc-950 tabular-nums mt-1 block">{{ recomendacionesData.totalEventosClickstream || 0 }}</span>
+            <span class="text-[11px] text-zinc-500">Eventos procesados</span>
+          </div>
+
+          <div class="bg-zinc-50/80 border border-zinc-200/70 rounded-xl p-3.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Tus Interacciones</span>
+            <span class="font-mono text-xl font-extrabold text-zinc-950 tabular-nums mt-1 block">{{ recomendacionesData.totalInteraccionesPonderadas || 0 }}</span>
+            <span class="text-[11px] text-zinc-500">Vistas, carrito y compras</span>
+          </div>
+
+          <div class="bg-zinc-50/80 border border-zinc-200/70 rounded-xl p-3.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Pagos Auditados</span>
+            <span class="font-mono text-xl font-extrabold text-zinc-950 tabular-nums mt-1 block">{{ recomendacionesData.totalEventosAntifraude || 0 }}</span>
+            <span class="text-[11px] text-zinc-500">Tópico antifraude</span>
+          </div>
+
+          <div class="bg-red-50/60 border border-red-200/70 rounded-xl p-3.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-red-600 block">Bloqueos Fraude</span>
+            <span class="font-mono text-xl font-extrabold text-red-700 tabular-nums mt-1 block">{{ recomendacionesData.totalBloqueosFraude || 0 }}</span>
+            <span class="text-[11px] text-red-600/80">Alertas preventivas</span>
           </div>
         </div>
 
@@ -225,6 +249,28 @@
                 </svg>
                 <span>Agregar</span>
               </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FEED EN VIVO DE ÚLTIMOS EVENTOS -->
+        <div *ngIf="recomendacionesData?.ultimosEventos?.length" class="pt-4 border-t border-zinc-100">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Últimos Eventos en Tiempo Real (Kafka &rarr; DynamoDB)</span>
+            <span class="text-[10px] font-mono text-zinc-400 tabular-nums">{{ recomendacionesData.ultimosEventos.length }} recientes</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <div *ngFor="let ev of recomendacionesData.ultimosEventos"
+                 class="flex items-start justify-between gap-2.5 p-2.5 rounded-xl border text-xs"
+                 [ngClass]="ev.esFraude ? 'bg-red-50/70 border-red-200/80' : 'bg-zinc-50/70 border-zinc-200/70'">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-900 text-white">{{ ev.tipoEvento }}</span>
+                  <span class="font-mono text-[10px] text-zinc-500 truncate">{{ ev.origenMicroservicio }}</span>
+                </div>
+                <p class="text-[11px] text-zinc-700 truncate mt-1" [title]="ev.detalle">{{ ev.detalle || ev.productoNombre }}</p>
+              </div>
+              <span *ngIf="ev.esFraude" class="text-[10px] font-bold text-red-700 bg-red-100 px-1.5 py-0.5 rounded shrink-0">FRAUDE</span>
             </div>
           </div>
         </div>

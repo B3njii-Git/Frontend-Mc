@@ -1,8 +1,6 @@
 export const environment = {
-  production: false,
-  apiGatewayUrl: '',
-  redirectUri: 'http://localhost:4200'
-  // Configuración de AWS / Cloud:
-  // apiGatewayUrl: 'https://h2z4p63rlk.execute-api.us-east-1.amazonaws.com',
-  // redirectUri: 'https://zza50fb99g.execute-api.us-east-1.amazonaws.com'
+  production: true,
+  apiGatewayUrl: 'https://bwx0uivnzk.execute-api.us-east-1.amazonaws.com',
+  redirectUri: 'https://aeyy53eds3.execute-api.us-east-1.amazonaws.com',
+  wsUrl: 'ws://34.231.147.203:8086/ws/metrics'
 };

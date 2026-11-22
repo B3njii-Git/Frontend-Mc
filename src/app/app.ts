@@ -27,6 +27,10 @@ export class App implements OnInit, OnDestroy {
   productos: any[] = [];
   carrito: any = null;
   recomendacionesData: any = null;
+  wsEstado: 'conectado' | 'fallback' | 'desconectado' = 'desconectado';
+  private wsMetricas: WebSocket | null = null;
+  private wsFallbackTimer: any = null;
+  private wsReconnectTimer: any = null;
   busquedaTexto: string = '';
   categoriaActiva: string = 'Todos';
   productoDetalle: any = null;
@@ -236,11 +240,102 @@ export class App implements OnInit, OnDestroy {
       next: data => {
         this.recomendacionesData = data;
         this.cdr.detectChanges();
+        if (this.wsEstado === 'desconectado') {
+          this.conectarWebSocketMetricas(data?.usuarioId);
+        }
       },
       error: () => {
         // ms-recomendaciones puede estar iniciando
       }
     });
+  }
+
+  conectarWebSocketMetricas(userId?: string) {
+    if (this.wsMetricas && (this.wsMetricas.readyState === WebSocket.OPEN || this.wsMetricas.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+
+    const baseWs = (environment as any).wsUrl as string | undefined;
+    if (!baseWs) {
+      this.activarFallbackMetricas();
+      return;
+    }
+
+    // Si la página corre en HTTPS y el endpoint WS no usa TLS (ws://), activar fallback HTTP automático
+    if (window.location.protocol === 'https:' && baseWs.startsWith('ws://')) {
+      this.activarFallbackMetricas();
+      return;
+    }
+
+    const targetUser = userId || this.recomendacionesData?.usuarioId || 'visitante-anonimo';
+    const url = `${baseWs}?userId=${encodeURIComponent(targetUser)}`;
+
+    try {
+      const ws = new WebSocket(url);
+      this.wsMetricas = ws;
+
+      ws.onopen = () => {
+        this.wsEstado = 'conectado';
+        if (this.wsFallbackTimer) {
+          clearInterval(this.wsFallbackTimer);
+          this.wsFallbackTimer = null;
+        }
+        this.cdr.detectChanges();
+      };
+
+      ws.onmessage = event => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data) {
+            if (!this.recomendacionesData || data.usuarioId === this.recomendacionesData.usuarioId) {
+              this.recomendacionesData = data;
+            } else {
+              this.recomendacionesData = {
+                ...this.recomendacionesData,
+                totalEventosClickstream: data.totalEventosClickstream,
+                totalEventosAntifraude: data.totalEventosAntifraude,
+                totalBloqueosFraude: data.totalBloqueosFraude,
+                ultimosEventos: data.ultimosEventos
+              };
+            }
+            this.cdr.detectChanges();
+          }
+        } catch {}
+      };
+
+      ws.onerror = () => {
+        this.activarFallbackMetricas();
+      };
+
+      ws.onclose = () => {
+        if (this.wsEstado === 'conectado') {
+          this.wsEstado = 'desconectado';
+          this.wsReconnectTimer = setTimeout(() => {
+            if (this.loginDisplay) this.conectarWebSocketMetricas(targetUser);
+          }, 5000);
+        } else {
+          this.activarFallbackMetricas();
+        }
+      };
+    } catch {
+      this.activarFallbackMetricas();
+    }
+  }
+
+  private activarFallbackMetricas() {
+    this.wsEstado = 'fallback';
+    this.cdr.detectChanges();
+    if (this.wsFallbackTimer) return;
+    this.wsFallbackTimer = setInterval(() => {
+      if (!this.loginDisplay) return;
+      this.http.get<any>(`${this.apiUrl}/api/analytics/recomendaciones`).subscribe({
+        next: data => {
+          this.recomendacionesData = data;
+          this.cdr.detectChanges();
+        },
+        error: () => {}
+      });
+    }, 5000);
   }
 
   filtrarCatalogo(categoria?: string) {
@@ -1021,6 +1116,22 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.wsMetricas) {
+      this.wsMetricas.close();
+      this.wsMetricas = null;
+    }
+    if (this.wsFallbackTimer) {
+      clearInterval(this.wsFallbackTimer);
+      this.wsFallbackTimer = null;
+    }
+    if (this.wsReconnectTimer) {
+      clearTimeout(this.wsReconnectTimer);
+      this.wsReconnectTimer = null;
+    }
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
     this._destroying$.next(undefined);
     this._destroying$.complete();
   }

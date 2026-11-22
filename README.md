@@ -58,7 +58,14 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
 
-## Versión Actual: 2.5.0
+## Versión Actual: 2.6.0
+- **Dashboard de Métricas Analíticas en Tiempo Real con WebSockets (`app.ts` & `app.html`)**:
+  - Conexión WebSocket (`conectarWebSocketMetricas`) hacia `ms-recomendaciones` (`/ws/metrics`) con indicador de estado en vivo (*WebSocket En Vivo* / *Tiempo Real Auto-Sync*), reconexión automática y fallback HTTP transparente bajo HTTPS.
+  - Visualización en tiempo real de **4 métricas analíticas** (*Volumen Clickstream*, *Tus Interacciones*, *Pagos Auditados*, *Bloqueos Fraude*) junto al ranking **Top 5 Recomendado** y el feed en vivo de últimos eventos (`Kafka -> DynamoDB`).
+- **Configuración de Entornos AWS (`environment.ts` & `environment.development.ts`)**:
+  - Configuración de `apiGatewayUrl` (`McPedidos360-Backend-Gateway`), `redirectUri` (`McPedidos360-Frontend-Gateway`) y `wsUrl` para despliegue en AWS Academy y entorno local.
+
+### Versión 2.5.0
 - **Integración con Transbank Webpay Plus y Kafka Velocity Check (`app.ts` & `app.html`)**:
   - Redirección POST automática (`token_ws`) hacia el portal de integración de Transbank Webpay Plus mediante `POST /api/pagos/iniciar`.
   - Captura automática de callback (`?token_ws=...` o `?TBK_TOKEN=...`) en `ngOnInit()` y confirmación con `POST /api/pagos/commit`, actualizando el estado del pedido, notificaciones y el Top 5 de recomendaciones (`purchase = 3 pts`).
